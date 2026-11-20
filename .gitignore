@@ -1,0 +1,25 @@
+# macOS / IDE
+.DS_Store
+.idea/
+*.iml
+
+# Java Server
+server/build/
+server/dist/
+
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/*.tfplan
+infra/terraform/tfplan
+
+# React Native Mobile
+mobile/node_modules/
+mobile/ios/Pods/
+mobile/ios/build/
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/build/
+mobile/android/local.properties
+mobile/*.log
