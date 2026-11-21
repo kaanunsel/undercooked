@@ -14,12 +14,14 @@ const SOUND_FILES: Record<string, string> = {
 };
 
 const loadedSounds: Record<string, Sound | null> = {};
+let bgmSound: Sound | null = null;
+let bgmWanted = false;
+let bgmMuted = false;
 
-/**
- * Lightweight native sound playback via react-native-sound.
- * Gracefully no-ops if a WAV asset is not yet bundled in android/res/raw or iOS bundle.
- */
 export function playGameSound(event: string): void {
+  if (bgmMuted) {
+    return;
+  }
   const filename = SOUND_FILES[event];
   if (!filename) {
     return;
@@ -31,7 +33,7 @@ export function playGameSound(event: string): void {
     return;
   }
   if (cached === null) {
-    return; // Previously failed to load; skip retrying every tick
+    return;
   }
 
   try {
@@ -41,9 +43,62 @@ export function playGameSound(event: string): void {
         return;
       }
       loadedSounds[filename] = s;
+      s.setVolume(0.75);
       s.play();
     });
   } catch {
     loadedSounds[filename] = null;
   }
+}
+
+export function startBackgroundMusic(): void {
+  bgmWanted = true;
+  if (bgmMuted) {
+    return;
+  }
+  if (bgmSound) {
+    bgmSound.setVolume(0.32);
+    bgmSound.setNumberOfLoops(-1);
+    bgmSound.play();
+    return;
+  }
+
+  try {
+    const music = new Sound('kitchen_bgm.wav', Sound.MAIN_BUNDLE, (err) => {
+      if (err) {
+        return;
+      }
+      bgmSound = music;
+      music.setNumberOfLoops(-1);
+      music.setVolume(0.32);
+      if (bgmWanted && !bgmMuted) {
+        music.play();
+      }
+    });
+  } catch {
+    // Ignore if audio session unavailable
+  }
+}
+
+export function stopBackgroundMusic(): void {
+  bgmWanted = false;
+  if (bgmSound) {
+    bgmSound.stop();
+  }
+}
+
+export function toggleAudioMute(): boolean {
+  bgmMuted = !bgmMuted;
+  if (bgmMuted) {
+    if (bgmSound) {
+      bgmSound.pause();
+    }
+  } else if (bgmWanted) {
+    startBackgroundMusic();
+  }
+  return bgmMuted;
+}
+
+export function isAudioMuted(): boolean {
+  return bgmMuted;
 }

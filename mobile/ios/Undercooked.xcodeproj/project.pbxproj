@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1B2C3D4E5F6000000000207 /* plate.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000107 /* plate.wav */; };
+		A1B2C3D4E5F6000000000206 /* sizzle.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000106 /* sizzle.wav */; };
+		A1B2C3D4E5F6000000000205 /* chop.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000105 /* chop.wav */; };
+		A1B2C3D4E5F6000000000204 /* buzz.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000104 /* buzz.wav */; };
+		A1B2C3D4E5F6000000000203 /* chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000103 /* chime.wav */; };
+		A1B2C3D4E5F6000000000202 /* ding.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000102 /* ding.wav */; };
+		A1B2C3D4E5F6000000000201 /* kitchen_bgm.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000101 /* kitchen_bgm.wav */; };
 		0C80B921A6F3F58F76C31292 /* libPods-Undercooked.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-Undercooked.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
@@ -16,6 +23,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A1B2C3D4E5F6000000000107 /* plate.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = plate.wav; path = Undercooked/Sounds/plate.wav; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000106 /* sizzle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = sizzle.wav; path = Undercooked/Sounds/sizzle.wav; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000105 /* chop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = chop.wav; path = Undercooked/Sounds/chop.wav; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000104 /* buzz.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = buzz.wav; path = Undercooked/Sounds/buzz.wav; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000103 /* chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = chime.wav; path = Undercooked/Sounds/chime.wav; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000102 /* ding.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = ding.wav; path = Undercooked/Sounds/ding.wav; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000101 /* kitchen_bgm.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = kitchen_bgm.wav; path = Undercooked/Sounds/kitchen_bgm.wav; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* Undercooked.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Undercooked.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Undercooked/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Undercooked/Info.plist; sourceTree = "<group>"; };
@@ -49,6 +63,13 @@
 				761780EE2CA45674006654EF /* SceneDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
+				A1B2C3D4E5F6000000000107 /* plate.wav */,
+				A1B2C3D4E5F6000000000106 /* sizzle.wav */,
+				A1B2C3D4E5F6000000000105 /* chop.wav */,
+				A1B2C3D4E5F6000000000104 /* buzz.wav */,
+				A1B2C3D4E5F6000000000103 /* chime.wav */,
+				A1B2C3D4E5F6000000000102 /* ding.wav */,
+				A1B2C3D4E5F6000000000101 /* kitchen_bgm.wav */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 			);
 			name = Undercooked;
@@ -162,6 +183,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
+				A1B2C3D4E5F6000000000207 /* plate.wav in Resources */,
+				A1B2C3D4E5F6000000000206 /* sizzle.wav in Resources */,
+				A1B2C3D4E5F6000000000205 /* chop.wav in Resources */,
+				A1B2C3D4E5F6000000000204 /* buzz.wav in Resources */,
+				A1B2C3D4E5F6000000000203 /* chime.wav in Resources */,
+				A1B2C3D4E5F6000000000202 /* ding.wav in Resources */,
+				A1B2C3D4E5F6000000000201 /* kitchen_bgm.wav in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				9FB8D925CFE2D97AACCD1505 /* PrivacyInfo.xcprivacy in Resources */,
 			);

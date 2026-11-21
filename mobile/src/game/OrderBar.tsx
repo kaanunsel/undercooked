@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ItemType, OrderDto } from '../types/protocol';
 
 interface OrderBarProps {
@@ -34,8 +35,12 @@ export const OrderBar: React.FC<OrderBarProps> = ({
   cleanPlates,
   washingPlates,
 }) => {
+  const insets = useSafeAreaInsets();
+  const padLeft = Math.max(24, insets.left);
+  const padRight = Math.max(24, insets.right);
+
   return (
-    <View style={styles.bar}>
+    <View style={[styles.bar, { paddingLeft: padLeft, paddingRight: padRight }]}>
       <View style={styles.ordersRow}>
         {orders.length === 0 ? (
           <Text style={styles.waitingText}>Waiting for orders...</Text>
@@ -94,14 +99,13 @@ export const OrderBar: React.FC<OrderBarProps> = ({
 
 const styles = StyleSheet.create({
   bar: {
-    height: 62,
-    backgroundColor: '#161920',
+    height: 60,
+    backgroundColor: '#14171D',
     borderBottomWidth: 1,
-    borderBottomColor: '#2E3440',
+    borderBottomColor: '#2B313D',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
     gap: 8,
   },
   ordersRow: {
@@ -117,7 +121,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   ticket: {
-    width: 112,
+    width: 106,
     backgroundColor: '#FFFDF7',
     borderRadius: 6,
     paddingHorizontal: 6,
@@ -129,10 +133,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ticketTitle: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '800',
     color: '#263238',
-    maxWidth: 74,
+    maxWidth: 70,
   },
   ticketPts: {
     fontSize: 9,
@@ -141,7 +145,7 @@ const styles = StyleSheet.create({
   },
   ingRow: {
     flexDirection: 'row',
-    gap: 3,
+    gap: 2.5,
     marginTop: 3,
     marginBottom: 4,
   },
@@ -152,7 +156,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     color: '#FFFFFF',
-    fontSize: 8,
+    fontSize: 7.5,
     fontWeight: '800',
   },
   timerTrack: {
