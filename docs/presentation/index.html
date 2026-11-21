@@ -1,0 +1,2572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Undercooked — CMPE 436 Concurrent & Distributed Programming</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #F7F5F0;
+    --surface: #FFFFFF;
+    --surface-alt: #EFECE4;
+    --ink: #14161A;
+    --ink-soft: #4A4F5A;
+    --ink-muted: #767B86;
+    --line: #DDD7CB;
+    --line-strong: #C5BEB0;
+
+    --dark-bg: #14161A;
+    --dark-surface: #1C1F26;
+    --dark-line: #2C313C;
+    --dark-ink: #F4F2EC;
+    --dark-muted: #9BA1AE;
+
+    --terracotta: #D94E3B;
+    --terracotta-soft: #FBECE9;
+    --teal: #237A74;
+    --teal-soft: #E6F3F2;
+    --ochre: #B57A00;
+    --ochre-soft: #FBF4DF;
+    --slate-accent: #2D4A6E;
+    --slate-soft: #EBF1F7;
+
+    --code-bg: #161920;
+    --code-line-hl: rgba(217, 78, 59, 0.14);
+    --code-line-hl-teal: rgba(45, 168, 159, 0.14);
+    --code-ink: #E6E9EF;
+    --code-kw: #F07B68;
+    --code-ty: #7DC4B8;
+    --code-fn: #F2C97D;
+    --code-str: #A5D6A7;
+    --code-num: #E2A673;
+    --code-cm: #7E8799;
+
+    --font-display: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #0D0F12;
+    color: var(--ink);
+    font-family: var(--font-body);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Stage for browser viewing */
+  #stage {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  #deck {
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    transform-origin: center center;
+  }
+
+  /* Individual Slide */
+  .slide {
+    position: absolute;
+    inset: 0;
+    width: 1280px;
+    height: 720px;
+    background: var(--paper);
+    color: var(--ink);
+    display: none;
+    flex-direction: column;
+    padding: 44px 56px 38px 56px;
+    overflow: hidden;
+  }
+
+  .slide.active {
+    display: flex;
+  }
+
+  .slide.dark {
+    background: var(--dark-bg);
+    color: var(--dark-ink);
+  }
+
+  /* Running Header & Footer */
+  .slide-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 22px;
+    flex-shrink: 0;
+  }
+
+  .slide.dark .slide-top {
+    border-bottom-color: var(--dark-line);
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .kicker .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--terracotta);
+    display: inline-block;
+  }
+
+  .kicker.teal { color: var(--teal); }
+  .kicker.teal .dot { background: var(--teal); }
+  .kicker.ochre { color: var(--ochre); }
+  .kicker.ochre .dot { background: var(--ochre); }
+
+  .slide-ref {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    letter-spacing: 0.03em;
+  }
+
+  .slide.dark .slide-ref {
+    color: var(--dark-muted);
+  }
+
+  .slide-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .slide-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 12px;
+    margin-top: 16px;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+
+  .slide.dark .slide-foot {
+    border-top-color: var(--dark-line);
+    color: var(--dark-muted);
+  }
+
+  /* Typography */
+  h1 {
+    font-family: var(--font-display);
+    font-size: 64px;
+    line-height: 1.04;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 32px;
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+    color: var(--ink);
+  }
+
+  .slide.dark h2 {
+    color: var(--dark-ink);
+  }
+
+  h3 {
+    font-family: var(--font-display);
+    font-size: 17px;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+
+  .slide.dark p {
+    color: var(--dark-muted);
+  }
+
+  .lead {
+    font-size: 17px;
+    line-height: 1.48;
+    color: var(--ink-soft);
+  }
+
+  /* Grid Helpers */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .grid-60-40 {
+    display: grid;
+    grid-template-columns: 1.48fr 1fr;
+    gap: 26px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .grid-55-45 {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 24px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .grid-45-55 {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+    gap: 24px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* Cards & Surfaces */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 16px 18px;
+  }
+
+  .card-muted {
+    background: var(--surface-alt);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+
+  .card-accent {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3.5px solid var(--terracotta);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+
+  .card-accent.teal { border-left-color: var(--teal); }
+  .card-accent.ochre { border-left-color: var(--ochre); }
+  .card-accent.slate { border-left-color: var(--slate-accent); }
+
+  /* Tags & Pills */
+  .tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.02em;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+  }
+
+  .tag.terracotta {
+    background: var(--terracotta-soft);
+    border-color: #ECC2B9;
+    color: #A83222;
+  }
+
+  .tag.teal {
+    background: var(--teal-soft);
+    border-color: #B6DCD9;
+    color: #195E59;
+  }
+
+  .tag.ochre {
+    background: var(--ochre-soft);
+    border-color: #E7D19A;
+    color: #825600;
+  }
+
+  .tag.slate {
+    background: var(--slate-soft);
+    border-color: #C3D4E7;
+    color: #213B5A;
+  }
+
+  .tag.dark {
+    background: var(--dark-surface);
+    border-color: var(--dark-line);
+    color: var(--dark-ink);
+  }
+
+  /* Inline code */
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--surface-alt);
+    border: 1px solid var(--line);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+
+  .slide.dark code {
+    background: var(--dark-surface);
+    border-color: var(--dark-line);
+    color: #F2C97D;
+  }
+
+  /* Code Blocks */
+  .code-panel {
+    background: var(--code-bg);
+    border-radius: 6px;
+    border: 1px solid #262B35;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .code-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: #1D212B;
+    border-bottom: 1px solid #2A303D;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: #C6CCD8;
+    flex-shrink: 0;
+  }
+
+  .code-head .lang {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8D96A8;
+  }
+
+  .code-head .lang.java { color: #F07B68; }
+  .code-head .lang.ts { color: #7DC4B8; }
+  .code-head .lang.json { color: #F2C97D; }
+
+  pre {
+    margin: 0;
+    padding: 12px 15px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.46;
+    color: var(--code-ink);
+    overflow: hidden;
+    white-space: pre;
+    tab-size: 2;
+  }
+
+  pre.compact {
+    font-size: 11.1px;
+    line-height: 1.38;
+    padding: 10px 13px;
+  }
+
+  pre.tiny {
+    font-size: 10.6px;
+    line-height: 1.36;
+    padding: 9px 12px;
+  }
+
+  .kw { color: var(--code-kw); font-weight: 500; }
+  .ty { color: var(--code-ty); }
+  .fn { color: var(--code-fn); }
+  .str { color: var(--code-str); }
+  .num { color: var(--code-num); }
+  .cm { color: var(--code-cm); font-style: italic; }
+
+  .hl {
+    display: inline-block;
+    width: calc(100% + 30px);
+    margin: 0 -15px;
+    padding: 0 15px 0 12px;
+    background: var(--code-line-hl);
+    border-left: 3px solid var(--terracotta);
+    vertical-align: top;
+  }
+
+  .hl-teal {
+    display: inline-block;
+    width: calc(100% + 30px);
+    margin: 0 -15px;
+    padding: 0 15px 0 12px;
+    background: var(--code-line-hl-teal);
+    border-left: 3px solid #48B5AD;
+    vertical-align: top;
+  }
+
+  pre.compact .hl, pre.compact .hl-teal {
+    width: calc(100% + 26px);
+    margin: 0 -13px;
+    padding: 0 13px 0 10px;
+  }
+
+  pre.tiny .hl, pre.tiny .hl-teal {
+    width: calc(100% + 24px);
+    margin: 0 -12px;
+    padding: 0 12px 0 9px;
+  }
+
+  /* Clean Lists */
+  ul.clean {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  ul.clean li {
+    position: relative;
+    padding-left: 18px;
+    font-size: 14px;
+    line-height: 1.46;
+    color: var(--ink-soft);
+  }
+
+  ul.clean li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 6px;
+    height: 6px;
+    background: var(--terracotta);
+    border-radius: 1px;
+  }
+
+  ul.clean.teal li::before { background: var(--teal); }
+  ul.clean.ochre li::before { background: var(--ochre); }
+  ul.clean li strong { color: var(--ink); font-weight: 600; }
+
+  /* Tables */
+  table.clean-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.6px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  table.clean-table th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-muted);
+    background: var(--surface-alt);
+    padding: 9px 11px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  table.clean-table td {
+    padding: 7.5px 11px;
+    border-bottom: 1px solid #ECE7DC;
+    vertical-align: middle;
+    color: var(--ink-soft);
+    line-height: 1.35;
+  }
+
+  table.clean-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  table.clean-table td strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* Screenshot Frame */
+  .device-frame {
+    background: #14171E;
+    border-radius: 12px;
+    padding: 10px;
+    border: 1.5px solid #2A2F3B;
+    position: relative;
+  }
+
+  .device-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+  }
+
+  .callout-pin {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--terracotta);
+    color: #FFFFFF;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #FFFFFF;
+  }
+
+  .callout-pin.teal { background: var(--teal); }
+  .callout-pin.ochre { background: var(--ochre); }
+  .callout-pin.slate { background: var(--slate-accent); }
+
+  /* Cover Slide Specifics */
+  .cover-grid {
+    display: grid;
+    grid-template-columns: 1.45fr 1fr;
+    gap: 36px;
+    flex: 1;
+    align-items: center;
+  }
+
+  .cover-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cover-eyebrow::before {
+    content: "";
+    width: 24px;
+    height: 2px;
+    background: var(--terracotta);
+    display: inline-block;
+  }
+
+  .cover-sub {
+    font-size: 20px;
+    line-height: 1.45;
+    color: #B8BECB;
+    margin-top: 20px;
+    max-width: 620px;
+  }
+
+  .cover-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 34px;
+  }
+
+  .cover-badge {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 7px 12px;
+    border-radius: 4px;
+    border: 1px solid #2F3542;
+    background: #1B1F27;
+    color: #E5E8EF;
+  }
+
+  .cover-badge strong {
+    color: #F07B68;
+    font-weight: 600;
+  }
+
+  .cover-badge.teal strong { color: #67C5BD; }
+  .cover-badge.ochre strong { color: #F2C97D; }
+
+  .cover-card {
+    background: #1B1F27;
+    border: 1px solid #2C323F;
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .cover-stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .cover-stat {
+    background: #14171D;
+    border: 1px solid #272D39;
+    border-radius: 5px;
+    padding: 12px 14px;
+  }
+
+  .cover-stat .val {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--dark-ink);
+    line-height: 1.1;
+  }
+
+  .cover-stat .lbl {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--dark-muted);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Recipe Cards */
+  .recipe-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--terracotta);
+    border-radius: 6px;
+    padding: 13px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .recipe-card.salad { border-top-color: var(--teal); }
+  .recipe-card.burger { border-top-color: var(--ochre); }
+  .recipe-card.cheese { border-top-color: var(--terracotta); }
+  .recipe-card.deluxe { border-top-color: var(--slate-accent); }
+
+  .recipe-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .recipe-pts {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--terracotta);
+  }
+
+  .recipe-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .ing-pill {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--surface-alt);
+    border: 1px solid var(--line);
+    color: var(--ink);
+  }
+
+  .ing-pill.chop { background: var(--teal-soft); border-color: #B6DCD9; color: #195E59; }
+  .ing-pill.cook { background: var(--terracotta-soft); border-color: #ECC2B9; color: #A83222; }
+  .ing-pill.ready { background: var(--ochre-soft); border-color: #E7D19A; color: #825600; }
+
+  /* Thread slot pills */
+  .slot-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+  }
+
+  .slot-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 3px;
+    min-width: 56px;
+    text-align: center;
+    background: var(--ink);
+    color: #FFFFFF;
+  }
+
+  .slot-num.terracotta { background: var(--terracotta); }
+  .slot-num.teal { background: var(--teal); }
+  .slot-num.ochre { background: var(--ochre); }
+  .slot-num.slate { background: var(--slate-accent); }
+
+  /* Metric Box for Stress Tests */
+  .test-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .test-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .test-name {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .pass-badge {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #166534;
+    background: #E6F6EC;
+    border: 1px solid #B7E4C7;
+    padding: 2px 7px;
+    border-radius: 3px;
+  }
+
+  .test-metric {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.15;
+  }
+
+  .test-desc {
+    font-size: 12.2px;
+    line-height: 1.42;
+    color: var(--ink-soft);
+  }
+
+  /* Browser Navigation Controls */
+  #hud-controls {
+    position: fixed;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 100;
+    background: rgba(20, 22, 26, 0.9);
+    border: 1px solid #2E3440;
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: #E2E6EE;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    opacity: 0.45;
+    transition: opacity 0.2s ease;
+  }
+
+  #hud-controls:hover {
+    opacity: 1;
+  }
+
+  #hud-controls button {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #D0D5DF;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  #hud-controls button:hover {
+    background: #2B313E;
+    color: #FFFFFF;
+  }
+
+  #hud-counter {
+    padding: 0 6px;
+    color: #9AA2B2;
+  }
+
+  /* Progress bar */
+  #progress {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--terracotta);
+    z-index: 101;
+    transition: width 0.2s ease;
+  }
+
+  /* Speaker notes drawer */
+  #notes-drawer {
+    position: fixed;
+    bottom: 58px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(860px, 92vw);
+    background: #14161A;
+    border: 1px solid #353B48;
+    border-radius: 8px;
+    padding: 14px 18px;
+    color: #E5E8EF;
+    font-size: 13.5px;
+    line-height: 1.5;
+    z-index: 110;
+    display: none;
+  }
+
+  #notes-drawer.open { display: block; }
+  #notes-drawer .notes-lbl {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #F07B68;
+    margin-bottom: 6px;
+  }
+
+  /* Grid overview modal */
+  #overview {
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 15, 18, 0.96);
+    z-index: 200;
+    padding: 36px 48px;
+    overflow-y: auto;
+    display: none;
+  }
+
+  #overview.open { display: block; }
+
+  .ov-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    color: #F4F2EC;
+    font-family: var(--font-display);
+  }
+
+  .ov-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .ov-item {
+    background: #1B1F27;
+    border: 1px solid #2E3442;
+    border-radius: 6px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+
+  .ov-item:hover, .ov-item.current {
+    border-color: var(--terracotta);
+  }
+
+  .ov-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--terracotta);
+    margin-bottom: 6px;
+  }
+
+  .ov-title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: #F4F2EC;
+    line-height: 1.3;
+  }
+
+  /* Exact 16:9 Print-to-PDF Styles */
+  @page {
+    size: 1280px 720px;
+    margin: 0;
+  }
+
+  @media print {
+    html, body {
+      width: 1280px;
+      height: auto;
+      background: #FFFFFF;
+      overflow: visible;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    #stage {
+      position: static;
+      display: block;
+      overflow: visible;
+    }
+
+    #deck {
+      width: 1280px;
+      height: auto;
+      transform: none !important;
+    }
+
+    .slide {
+      position: relative !important;
+      display: flex !important;
+      width: 1280px !important;
+      height: 720px !important;
+      page-break-after: always;
+      break-after: page;
+      overflow: hidden !important;
+    }
+
+    .slide:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    #hud-controls, #progress, #notes-drawer, #overview {
+      display: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="deck">
+
+    <!-- ==================== SLIDE 01: TITLE ==================== -->
+    <section class="slide dark active" data-title="Undercooked — Title" data-notes="Introduce the project: Undercooked is a 2D real-time multiplayer cooperative cooking game built for CMPE 436. Highlight the core rule: zero Java frameworks and zero java.util.concurrent — every single lock, semaphore, bounded buffer, and monitor is hand-written in plain Java 21 following lecture slides.">
+      <div class="slide-top">
+        <span class="kicker"><span class="dot"></span>BOĞAZİÇİ UNIVERSITY · CMPE 436</span>
+        <span class="slide-ref">CONCURRENT &amp; DISTRIBUTED PROGRAMMING · FALL 2026–2027</span>
+      </div>
+      <div class="slide-body">
+        <div class="cover-grid">
+          <div>
+            <div class="cover-eyebrow">TERM PROJECT PRESENTATION</div>
+            <h1>Undercooked</h1>
+            <p class="cover-sub">
+              A 2D multiplayer cooperative cooking game where every shared kitchen bottleneck is solved with <strong style="color:#F4F2EC;">hand-rolled concurrency primitives</strong> and a <strong style="color:#F4F2EC;">raw TCP socket server</strong> in plain Java.
+            </p>
+            <div class="cover-badges">
+              <span class="cover-badge"><strong>Java 21</strong> · Zero Frameworks</span>
+              <span class="cover-badge"><strong>0</strong> java.util.concurrent.*</span>
+              <span class="cover-badge teal"><strong>Raw TCP :6789</strong> · JSON Lines</span>
+              <span class="cover-badge ochre"><strong>Bare React Native</strong> · Skia 2D</span>
+            </div>
+          </div>
+
+          <div class="cover-card">
+            <div style="font-family:var(--font-mono);font-size:11px;color:#9BA1AE;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">Live Architecture Snapshot</div>
+            <div class="device-frame" style="padding:6px;border-color:#343B49;">
+              <img src="../images/gameplay.jpg" alt="Undercooked gameplay preview" />
+            </div>
+            <div class="cover-stat-row">
+              <div class="cover-stat">
+                <div class="val">10</div>
+                <div class="lbl">Concurrency Scenarios</div>
+              </div>
+              <div class="cover-stat">
+                <div class="val">6 / 6</div>
+                <div class="lbl">Stress Suites Passing</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>UNDERCOOKED · MULTITHREADED TCP + CUSTOM SYNCHRONIZATION</span>
+        <span>01 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 02: GAME SHOWCASE ==================== -->
+    <section class="slide" data-title="What Is Undercooked?" data-notes="Walk classmates through the actual screenshot from our mobile build. Point out the 4 numbered regions: top-left timed orders, shared top/left stations, finite 4-plate dispenser on the right, and two-thumb landscape controls (joystick + CHOP + GRAB/DROP).">
+      <div class="slide-top">
+        <span class="kicker"><span class="dot"></span>01 / GAME OVERVIEW</span>
+        <span class="slide-ref">1–4 PLAYERS · LANDSCAPE 2D COOPERATIVE KITCHEN</span>
+      </div>
+      <div class="slide-body">
+        <h2>Real-Time Cooperative Kitchen — Built for Concurrency</h2>
+        <div class="grid-60-40" style="align-items:start;">
+          <div class="col" style="gap:12px;">
+            <div class="device-frame">
+              <img src="../images/gameplay.jpg" alt="Undercooked 2D kitchen gameplay" />
+              <div class="callout-pin" style="top:6px;left:226px;">1</div>
+              <div class="callout-pin teal" style="top:56px;left:330px;">2</div>
+              <div class="callout-pin ochre" style="top:6px;right:154px;">3</div>
+              <div class="callout-pin slate" style="bottom:68px;right:24px;">4</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="card-muted" style="padding:10px 12px;font-size:12.5px;">
+                <strong style="color:var(--terracotta);">1. Order Queue (Max 5)</strong> — Timed customer tickets produced continuously; expiring costs −20 pts.
+              </div>
+              <div class="card-muted" style="padding:10px 12px;font-size:12.5px;">
+                <strong style="color:var(--teal);">2. Contested Stations</strong> — Only 2 stoves &amp; 2 chopping boards shared across up to 4 chefs.
+              </div>
+              <div class="card-muted" style="padding:10px 12px;font-size:12.5px;">
+                <strong style="color:var(--ochre);">3. Finite Plate Pool (4/4)</strong> — Serving consumes a plate; Dishwasher returns it 4s later.
+              </div>
+              <div class="card-muted" style="padding:10px 12px;font-size:12.5px;">
+                <strong style="color:var(--slate-accent);">4. Two-Thumb Controls</strong> — Left joystick moves (20 Hz); right buttons <code>CHOP</code> &amp; <code>GRAB/DROP</code>.
+              </div>
+            </div>
+          </div>
+
+          <div class="col" style="gap:14px;">
+            <div class="card">
+              <h3>The Gameplay Loop</h3>
+              <p style="font-size:14px;">
+                1 to 4 players join a room with a 4-letter code (e.g. <code>K4M2</code>), choose a <strong>90s demo</strong> or <strong>180s shift</strong>, and coordinate on a compact <strong>12×8 top-down grid</strong> with a central prep island.
+              </p>
+            </div>
+            <div class="card-accent">
+              <h3>Why a Cooking Game for CMPE 436?</h3>
+              <ul class="clean" style="margin-top:6px;">
+                <li><strong>Shared scarce resources</strong> — chefs race for the same cooked patty on Stove #0.</li>
+                <li><strong>Bounded production</strong> — order board caps at 5 tickets; dishwasher recycles 4 plates.</li>
+                <li><strong>Atomic scoring</strong> — two chefs serving the last matching order must never double-score.</li>
+                <li><strong>Real-time network state</strong> — authoritative 20 Hz server ticks broadcast to mobile sockets.</li>
+              </ul>
+            </div>
+            <div class="card-muted" style="font-family:var(--font-mono);font-size:12px;color:var(--ink);">
+              Clients: Bare React Native (Android APK &amp; iOS) · Skia 2D Canvas · Reanimated · Zustand
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>02 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 03: RULES & RECIPES ==================== -->
+    <section class="slide" data-title="How to Play: Rules, Recipes & Scoring" data-notes="Explain the exact game rules briefly so the audience understands every concurrency scenario later: ingredient prep times (2s chop, 4s cook, 9s burn), bidirectional plating, the 4 recipes, bonuses, and penalties.">
+      <div class="slide-top">
+        <span class="kicker teal"><span class="dot"></span>01 / GAMEPLAY &amp; RULES</span>
+        <span class="slide-ref">RECIPES · INGREDIENT PIPELINES · SCORING</span>
+      </div>
+      <div class="slide-body" style="gap:14px;">
+        <h2 style="margin-bottom:2px;">How to Play: Recipes, Stations &amp; Scoring Rules</h2>
+
+        <!-- 4 Recipe Cards -->
+        <div class="grid-4">
+          <div class="recipe-card salad">
+            <div class="recipe-head">
+              <strong style="font-family:var(--font-display);font-size:15px;">Garden Salad</strong>
+              <span class="recipe-pts">+40</span>
+            </div>
+            <div class="recipe-pills">
+              <span class="ing-pill chop">CHOPPED LET</span>
+              <span class="ing-pill chop">CHOPPED TOM</span>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--ink-muted);">Timer: 45s · Requires Plate</div>
+          </div>
+
+          <div class="recipe-card burger">
+            <div class="recipe-head">
+              <strong style="font-family:var(--font-display);font-size:15px;">Plain Burger</strong>
+              <span class="recipe-pts">+60</span>
+            </div>
+            <div class="recipe-pills">
+              <span class="ing-pill ready">BUN</span>
+              <span class="ing-pill cook">COOKED PATTY</span>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--ink-muted);">Timer: 55s · Requires Plate</div>
+          </div>
+
+          <div class="recipe-card cheese">
+            <div class="recipe-head">
+              <strong style="font-family:var(--font-display);font-size:15px;">Cheeseburger</strong>
+              <span class="recipe-pts">+80</span>
+            </div>
+            <div class="recipe-pills">
+              <span class="ing-pill ready">BUN</span>
+              <span class="ing-pill cook">COOKED PATTY</span>
+              <span class="ing-pill chop">SLICED CHS</span>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--ink-muted);">Timer: 65s · Requires Plate</div>
+          </div>
+
+          <div class="recipe-card deluxe">
+            <div class="recipe-head">
+              <strong style="font-family:var(--font-display);font-size:15px;">Deluxe Burger</strong>
+              <span class="recipe-pts">+110</span>
+            </div>
+            <div class="recipe-pills">
+              <span class="ing-pill ready">BUN</span>
+              <span class="ing-pill cook">PATTY</span>
+              <span class="ing-pill chop">LET</span>
+              <span class="ing-pill chop">TOM</span>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--ink-muted);">Timer: 75s · Requires Plate</div>
+          </div>
+        </div>
+
+        <!-- Middle & Bottom Split -->
+        <div class="grid-55-45">
+          <div class="card col" style="justify-content:space-between;">
+            <div>
+              <h3>Ingredient &amp; Station State Machine</h3>
+              <table class="clean-table" style="margin-top:8px;">
+                <thead>
+                  <tr>
+                    <th>Station</th>
+                    <th>Rule</th>
+                    <th>Output</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Ingredient Crates (5)</strong></td>
+                    <td>Infinite supply (<code>BUN</code>, <code>MEAT</code>, <code>LET</code>, <code>TOM</code>, <code>CHS</code>)</td>
+                    <td>Raw item (or ready <code>BUN</code>)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Chopping Board (×2)</strong></td>
+                    <td>Hold <code>CHOP</code> for <strong>2.0s</strong> total</td>
+                    <td><code>CHOPPED_*</code> / <code>SLICED_CHEESE</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Stove (×2)</strong></td>
+                    <td>Auto-cooks via 20 Hz tick: <code>0–4s</code> raw, <code>4–9s</code> ready, <code>&gt;9s</code> burnt</td>
+                    <td><code>COOKED_PATTY</code> / <code>BURNT_PATTY</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Counters &amp; Plating</strong></td>
+                    <td>Bidirectional combine: plate-on-item or item-on-plate</td>
+                    <td>Assembled plated dish</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Serving Window / Trash</strong></td>
+                    <td>Serve matches oldest order; Trash empties plate safely</td>
+                    <td>Score + plate to Dishwasher</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="col" style="gap:10px;">
+            <div class="card-accent teal" style="padding:12px 14px;">
+              <h3 style="font-size:15.5px;margin-bottom:6px;">Speed Bonus &amp; Combo Streak</h3>
+              <ul class="clean teal" style="gap:6px;">
+                <li style="font-size:13px;"><strong>Fast Delivery:</strong> <code>+20 pts</code> with &gt;60% time left; <code>+10 pts</code> with &gt;30% left.</li>
+                <li style="font-size:13px;"><strong>Combo Multiplier:</strong> Consecutive on-time serves add <code>+10 × min(combo, 3)</code>.</li>
+                <li style="font-size:13px;"><strong>Star Rating (180s):</strong> ★ <code>150+</code> &nbsp;·&nbsp; ★★ <code>320+</code> &nbsp;·&nbsp; ★★★ <code>500+</code> (0.5× for 90s demo).</li>
+              </ul>
+            </div>
+
+            <div class="card-accent" style="padding:12px 14px;">
+              <h3 style="font-size:15.5px;margin-bottom:6px;">Penalties &amp; Constraints</h3>
+              <ul class="clean" style="gap:6px;">
+                <li style="font-size:13px;"><strong>Order Expired (0.0s):</strong> <code>−20 pts</code> and combo resets to <code>0</code>.</li>
+                <li style="font-size:13px;"><strong>Wrong / Unmatched Dish:</strong> <code>−10 pts</code>, combo resets, plate still goes to dishwasher.</li>
+                <li style="font-size:13px;"><strong>Raw / Burnt Protection:</strong> Cannot be placed on a plate; discard burnt patties in Trash.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>03 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 04: ARCHITECTURE & CONSTRAINTS ==================== -->
+    <section class="slide" data-title="Architecture & Course Constraints" data-notes="Emphasize our strict compliance with CMPE 436 constraints: plain Java 21, zero frameworks, zero java.util.concurrent, and explicit java.lang.Thread objects. Walk through the architecture diagram from mobile clients over GCP firewall TCP:6789 into ServerSocket and the per-room worker threads.">
+      <div class="slide-top">
+        <span class="kicker"><span class="dot"></span>02 / SYSTEM ARCHITECTURE</span>
+        <span class="slide-ref">PLAIN JAVA 21 · GCP VM (TERRAFORM) · BARE REACT NATIVE</span>
+      </div>
+      <div class="slide-body">
+        <h2>End-to-End Architecture &amp; Strict CMPE 436 Constraints</h2>
+        <div class="grid-60-40">
+          <!-- Custom Crisp SVG Architecture Diagram -->
+          <div class="card" style="padding:14px;display:flex;align-items:center;justify-content:center;">
+            <svg viewBox="0 0 680 480" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="font-family:Inter, sans-serif;">
+              <!-- Clients Group -->
+              <rect x="10" y="12" width="660" height="86" rx="6" fill="#EFECE4" stroke="#C5BEB0" stroke-width="1.2"/>
+              <text x="24" y="31" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#575B66">CLIENTS — RAW TCP STREAM (\n-DELIMITED JSON)</text>
+
+              <rect x="24" y="42" width="200" height="44" rx="4" fill="#FFFFFF" stroke="#237A74" stroke-width="1.5"/>
+              <text x="34" y="61" font-size="12" font-weight="700" fill="#14161A">Chef 1..4 (React Native)</text>
+              <text x="34" y="77" font-family="JetBrains Mono, monospace" font-size="10" fill="#237A74">react-native-tcp-socket + Skia</text>
+
+              <rect x="240" y="42" width="200" height="44" rx="4" fill="#FFFFFF" stroke="#B57A00" stroke-width="1.5"/>
+              <text x="250" y="61" font-size="12" font-weight="700" fill="#14161A">Android APK / iOS Build</text>
+              <text x="250" y="77" font-family="JetBrains Mono, monospace" font-size="10" fill="#B57A00">60fps Reanimated + Zustand</text>
+
+              <rect x="456" y="42" width="200" height="44" rx="4" fill="#FFFFFF" stroke="#2D4A6E" stroke-width="1.5"/>
+              <text x="466" y="61" font-size="12" font-weight="700" fill="#14161A">Java Stress / Load Tests</text>
+              <text x="466" y="77" font-family="JetBrains Mono, monospace" font-size="10" fill="#2D4A6E">java.net.Socket (TcpLoadTest)</text>
+
+              <!-- Arrows down -->
+              <line x1="340" y1="98" x2="340" y2="128" stroke="#D94E3B" stroke-width="2"/>
+              <polygon points="335,123 345,123 340,131" fill="#D94E3B"/>
+              <rect x="352" y="104" width="174" height="19" rx="3" fill="#FBECE9" stroke="#ECC2B9"/>
+              <text x="360" y="117" font-family="JetBrains Mono, monospace" font-size="10" font-weight="600" fill="#A83222">TCP :6789 (GCP Static IP)</text>
+
+              <!-- GCP VM Box -->
+              <rect x="10" y="132" width="660" height="336" rx="6" fill="#FFFFFF" stroke="#14161A" stroke-width="1.5"/>
+              <text x="24" y="152" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#14161A">GCP COMPUTE ENGINE (e2-small, Ubuntu 24.04, JDK 21) — PLAIN JAVA SERVER</text>
+
+              <!-- ServerSocket & Handlers -->
+              <rect x="24" y="164" width="215" height="62" rx="5" fill="#161920"/>
+              <text x="36" y="185" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="700" fill="#F4F2EC">UndercookedServer</text>
+              <text x="36" y="201" font-family="JetBrains Mono, monospace" font-size="10" fill="#F07B68">new ServerSocket(6789)</text>
+              <text x="36" y="216" font-family="JetBrains Mono, monospace" font-size="10" fill="#9BA1AE">accept() → new Thread()</text>
+
+              <line x1="239" y1="195" x2="269" y2="195" stroke="#14161A" stroke-width="1.5"/>
+              <polygon points="265,191 265,199 272,195" fill="#14161A"/>
+
+              <rect x="273" y="164" width="192" height="62" rx="5" fill="#FBECE9" stroke="#D94E3B" stroke-width="1.3"/>
+              <text x="284" y="185" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#A83222">ClientHandlerThread ×N</text>
+              <text x="284" y="201" font-size="10.5" fill="#4A4F5A">BufferedReader.readLine()</text>
+              <text x="284" y="216" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#767B86">writeMutex (BinarySem)</text>
+
+              <line x1="465" y1="195" x2="490" y2="195" stroke="#14161A" stroke-width="1.5"/>
+              <polygon points="486,191 486,199 493,195" fill="#14161A"/>
+
+              <rect x="494" y="164" width="162" height="62" rx="5" fill="#EFECE4" stroke="#B5AE9E" stroke-width="1.2"/>
+              <text x="505" y="185" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#14161A">RoomRegistry</text>
+              <text x="505" y="201" font-size="10.5" fill="#4A4F5A">HashMap&lt;Code, Room&gt;</text>
+              <text x="505" y="216" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#237A74">registryMutex (BinSem)</text>
+
+              <!-- Arrow into Room -->
+              <line x1="369" y1="226" x2="369" y2="249" stroke="#14161A" stroke-width="1.5"/>
+              <polygon points="365,244 373,244 369,252" fill="#14161A"/>
+
+              <!-- Room Container -->
+              <rect x="24" y="253" width="632" height="202" rx="6" fill="#F7F5F0" stroke="#237A74" stroke-width="1.5"/>
+              <text x="36" y="272" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#237A74">ROOM INSTANCE (1–4 PLAYERS · BOUNDED N=6 THREAD SLOTS)</text>
+
+              <!-- Shared State Row -->
+              <rect x="36" y="283" width="146" height="70" rx="4" fill="#FFFFFF" stroke="#DDD7CB"/>
+              <text x="44" y="301" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#14161A">KitchenMap 12×8</text>
+              <text x="44" y="317" font-size="10" fill="#575B66">Per-Station BakeryLock</text>
+              <text x="44" y="331" font-size="10" fill="#575B66">Ordered resourceId</text>
+              <text x="44" y="345" font-family="JetBrains Mono, monospace" font-size="8.6" fill="#D94E3B">Player 0..3 &lt; Stn 10..49</text>
+
+              <rect x="191" y="283" width="146" height="70" rx="4" fill="#FFFFFF" stroke="#DDD7CB"/>
+              <text x="200" y="301" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#14161A">OrderBoard (≤5)</text>
+              <text x="200" y="317" font-size="10" fill="#575B66">CountingSem emptySlots</text>
+              <text x="200" y="331" font-size="10" fill="#575B66">BinarySem orderMutex</text>
+              <text x="200" y="345" font-family="JetBrains Mono, monospace" font-size="9" fill="#237A74">Atomic Serve / Expire</text>
+
+              <rect x="346" y="283" width="146" height="70" rx="4" fill="#FFFFFF" stroke="#DDD7CB"/>
+              <text x="354" y="301" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#14161A">PlatePool (4)</text>
+              <text x="354" y="317" font-size="10" fill="#575B66">CountingSem dirtyPlates</text>
+              <text x="354" y="331" font-size="10" fill="#575B66">BinarySem plateMutex</text>
+              <text x="354" y="345" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#B57A00">Non-blocking player grab</text>
+
+              <rect x="501" y="283" width="143" height="70" rx="4" fill="#FFFFFF" stroke="#DDD7CB"/>
+              <text x="510" y="301" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#14161A">Monitors &amp; Queue</text>
+              <text x="510" y="317" font-size="10" fill="#575B66">ReadersWritersLock</text>
+              <text x="510" y="331" font-size="10" fill="#575B66">RoomStateMonitor</text>
+              <text x="510" y="345" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#2D4A6E">BoundedBuffer(64)</text>
+
+              <!-- 4 Explicit Worker Threads -->
+              <text x="36" y="376" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#575B66">4 EXPLICIT WORKER THREADS PER ROOM (extends java.lang.Thread)</text>
+
+              <rect x="36" y="385" width="146" height="56" rx="4" fill="#161920"/>
+              <text x="45" y="404" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#F2C97D">GameTickThread</text>
+              <text x="45" y="419" font-size="10" fill="#C4CAD6">20 Hz cook/burn/expiry</text>
+              <text x="45" y="432" font-size="10" fill="#9BA1AE">+ Lamport snapshot</text>
+
+              <rect x="191" y="385" width="146" height="56" rx="4" fill="#161920"/>
+              <text x="200" y="404" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#7DC4B8">OrderGenerator</text>
+              <text x="200" y="419" font-size="10" fill="#C4CAD6">Producer every 12–16s</text>
+              <text x="200" y="432" font-size="10" fill="#9BA1AE">Blocks at 5/5 orders</text>
+
+              <rect x="346" y="385" width="146" height="56" rx="4" fill="#161920"/>
+              <text x="355" y="404" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#F07B68">DishwasherThread</text>
+              <text x="355" y="419" font-size="10" fill="#C4CAD6">Sleeps on dirtyPlates.P()</text>
+              <text x="355" y="432" font-size="10" fill="#9BA1AE">4s wash → clean plate</text>
+
+              <rect x="501" y="385" width="143" height="56" rx="4" fill="#161920"/>
+              <text x="510" y="404" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#A5D6A7">BroadcasterThread</text>
+              <text x="510" y="419" font-size="10" fill="#C4CAD6">Drains BroadcastQueue</text>
+              <text x="510" y="432" font-size="10" fill="#9BA1AE">Writes to TCP sockets</text>
+            </svg>
+          </div>
+
+          <!-- Constraints Column -->
+          <div class="col" style="gap:9px;">
+            <div class="card-accent" style="padding:10px 14px;">
+              <h3 style="font-size:15px;margin-bottom:4px;">1. Zero Frameworks, Zero Dependencies</h3>
+              <p style="font-size:12.6px;line-height:1.42;">
+                JDK 21 stdlib only (<code>java.lang</code>, <code>java.io</code>, <code>java.net</code>, <code>java.util</code>) built with plain <code>javac</code>/<code>Makefile</code>. No Spring, Netty, WebSocket, or Gson — custom <code>MiniJson.java</code>.
+              </p>
+            </div>
+
+            <div class="card-accent teal" style="padding:10px 14px;">
+              <h3 style="font-size:15px;margin-bottom:4px;">2. Zero <code>java.util.concurrent.*</code></h3>
+              <p style="font-size:12.6px;line-height:1.42;">
+                No <code>ReentrantLock</code>, <code>Semaphore</code>, <code>BlockingQueue</code>, <code>ConcurrentHashMap</code>, <code>ExecutorService</code>, or <code>Atomic*</code>. Every primitive is built from scratch in <code>undercooked.concurrency</code>.
+              </p>
+            </div>
+
+            <div class="card-accent ochre" style="padding:10px 14px;">
+              <h3 style="font-size:15px;margin-bottom:4px;">3. Explicit Multithreaded TCP</h3>
+              <p style="font-size:12.6px;line-height:1.42;">
+                Mirrors <code>lecture4-2.pdf</code> slides 45–50: raw <code>ServerSocket(6789)</code> spawning explicit <code>ClientHandlerThread</code> per socket, plus 4 explicit room worker threads.
+              </p>
+            </div>
+
+            <div class="card-muted" style="padding:10px 14px;font-size:12.4px;line-height:1.4;">
+              <strong>GCP Cloud VM:</strong> Single Terraform-managed <code>e2-small</code> (Ubuntu 24.04, static IP, TCP <code>6789</code> firewall, <code>systemd</code>) — classmates join directly from phones.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>04 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 05: RAW TCP CONNECTION CODE ==================== -->
+    <section class="slide" data-title="Raw TCP: Server & Client Code" data-notes="Show the exact mutual TCP connection code on both sides! Left is our plain Java ServerSocket accept loop and ClientConnection BufferedReader/BufferedWriter; right is React Native react-native-tcp-socket with chunk buffering and newline splitting. Highlight why TCP is a byte stream, not message-framed, and how ClientConnection's writeMutex prevents interleaved JSON writes.">
+      <div class="slide-top">
+        <span class="kicker teal"><span class="dot"></span>03 / NETWORKING — RAW TCP</span>
+        <span class="slide-ref">CMPE 436 LECTURE 4-2 (SLIDES 45–50) · SERVER ↔ CLIENT</span>
+      </div>
+      <div class="slide-body" style="gap:14px;">
+        <h2>Mutual Raw TCP Connection: Plain Java ↔ React Native</h2>
+        <div class="grid-2" style="gap:18px;">
+          <!-- Java Server Side -->
+          <div class="col" style="gap:10px;">
+            <div class="code-panel" style="flex:1.15;">
+              <div class="code-head">
+                <span>server/.../net/UndercookedServer.java</span>
+                <span class="lang java">Java · ServerSocket</span>
+              </div>
+<pre class="tiny"><span class="kw">public void</span> <span class="fn">serveForever</span>() <span class="kw">throws</span> <span class="ty">IOException</span> {
+<span class="hl">  <span class="kw">this</span>.welcomeSocket = <span class="kw">new</span> <span class="ty">ServerSocket</span>(requestedPort); <span class="cm">// :6789</span></span>
+  <span class="kw">while</span> (running) {
+<span class="hl">    <span class="ty">Socket</span> sock = welcomeSocket.<span class="fn">accept</span>(); <span class="cm">// blocks until SYN</span></span>
+    <span class="ty">ClientConnection</span> conn = <span class="kw">new</span> <span class="ty">ClientConnection</span>(id, sock);
+    clientsMutex.<span class="fn">P</span>();
+    <span class="kw">try</span> { activeClients.<span class="fn">add</span>(conn); } <span class="kw">finally</span> { clientsMutex.<span class="fn">V</span>(); }
+    <span class="cm">// Explicit java.lang.Thread per client (no thread pool)</span>
+<span class="hl">    <span class="kw">new</span> <span class="ty">ClientHandlerThread</span>(conn, <span class="kw">this</span>).<span class="fn">start</span>();</span>
+  }
+}</pre>
+            </div>
+
+            <div class="code-panel">
+              <div class="code-head">
+                <span>server/.../net/ClientConnection.java</span>
+                <span class="lang java">Java · Safe Line I/O</span>
+              </div>
+<pre class="tiny">socket.<span class="fn">setTcpNoDelay</span>(<span class="kw">true</span>); <span class="cm">// Disable Nagle for low-latency moves</span>
+reader = <span class="kw">new</span> <span class="ty">BufferedReader</span>(<span class="kw">new</span> <span class="ty">InputStreamReader</span>(sock.<span class="fn">getInputStream</span>(), UTF_8));
+writer = <span class="kw">new</span> <span class="ty">BufferedWriter</span>(<span class="kw">new</span> <span class="ty">OutputStreamWriter</span>(sock.<span class="fn">getOutputStream</span>(), UTF_8));
+
+<span class="kw">public boolean</span> <span class="fn">sendLine</span>(<span class="ty">String</span> jsonLine) {
+<span class="hl">  writeMutex.<span class="fn">P</span>(); <span class="cm">// Prevents interleaved bytes from Broadcaster &amp; Handler</span></span>
+  <span class="kw">try</span> { writer.<span class="fn">write</span>(jsonLine); writer.<span class="fn">write</span>(<span class="str">'\n'</span>); writer.<span class="fn">flush</span>(); <span class="kw">return true</span>; }
+  <span class="kw">finally</span> { writeMutex.<span class="fn">V</span>(); }
+}</pre>
+            </div>
+          </div>
+
+          <!-- React Native Client Side -->
+          <div class="col" style="gap:10px;">
+            <div class="code-panel" style="flex:1;">
+              <div class="code-head">
+                <span>mobile/src/net/tcpClient.ts</span>
+                <span class="lang ts">TypeScript · Native TCP</span>
+              </div>
+<pre class="tiny"><span class="kw">import</span> <span class="ty">TcpSocket</span> <span class="kw">from</span> <span class="str">'react-native-tcp-socket'</span>;
+
+<span class="fn">connect</span>(host: <span class="ty">string</span>, port: <span class="ty">number</span>): <span class="ty">void</span> {
+<span class="hl-teal">  <span class="kw">const</span> sock = <span class="ty">TcpSocket</span>.<span class="fn">createConnection</span>({ host, port }, () =&gt; {</span>
+    <span class="kw">this</span>.isConnected = <span class="kw">true</span>;
+    <span class="kw">this</span>.<span class="fn">notifyStatus</span>(<span class="kw">true</span>);
+  });
+  sock.<span class="fn">on</span>(<span class="str">'data'</span>, (chunk) =&gt; {
+    <span class="kw">this</span>.rxBuffer += chunk.<span class="fn">toString</span>(<span class="str">'utf8'</span>);
+<span class="hl-teal">    <span class="kw">const</span> lines = <span class="kw">this</span>.rxBuffer.<span class="fn">split</span>(<span class="str">'\n'</span>);</span>
+    <span class="cm">// Preserve trailing incomplete TCP fragment for next packet</span>
+    <span class="kw">this</span>.rxBuffer = lines.<span class="fn">pop</span>() ?? <span class="str">''</span>;
+    <span class="kw">for</span> (<span class="kw">const</span> line <span class="kw">of</span> lines) {
+      <span class="kw">if</span> (!line.<span class="fn">trim</span>()) <span class="kw">continue</span>;
+      <span class="kw">const</span> msg = <span class="ty">JSON</span>.<span class="fn">parse</span>(line) <span class="kw">as</span> <span class="ty">ServerMessage</span>;
+      <span class="kw">this</span>.messageListeners.<span class="fn">forEach</span>(fn =&gt; <span class="fn">fn</span>(msg));
+    }
+  });
+}
+
+<span class="fn">send</span>(msg: <span class="ty">ClientMessage</span>): <span class="ty">boolean</span> {
+<span class="hl-teal">  <span class="kw">this</span>.socket.<span class="fn">write</span>(<span class="ty">JSON</span>.<span class="fn">stringify</span>(msg) + <span class="str">'\n'</span>, <span class="str">'utf8'</span>);</span>
+  <span class="kw">return true</span>;
+}</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-muted" style="padding:9px 14px;display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12.5px;">
+          <span><strong>Why <code>\n</code> Framing?</strong> Raw TCP is an unframed byte stream — one <code>data</code> event may carry half a JSON object or three snapshots coalesced together.</span>
+          <span class="tag terracotta" style="white-space:nowrap;flex-shrink:0;">Zero HTTP / Zero WebSocket Overhead</span>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>05 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 06: WIRE PROTOCOL & THREAD MODEL ==================== -->
+    <section class="slide" data-title="Wire Protocol & Thread Topology" data-notes="Show the actual JSON messages flowing across the TCP connection and explain our bounded thread slot architecture per room (N=6 slots for BakeryLock + dedicated OrderGenerator and Broadcaster threads).">
+      <div class="slide-top">
+        <span class="kicker teal"><span class="dot"></span>03 / PROTOCOL &amp; THREAD TOPOLOGY</span>
+        <span class="slide-ref">CLIENT ↔ SERVER MESSAGES · BOUNDED ROOM SLOTS</span>
+      </div>
+      <div class="slide-body">
+        <h2>Newline-Delimited JSON Protocol &amp; Per-Room Threads</h2>
+        <div class="grid-55-45">
+          <!-- Protocol Table + Real Wire Trace -->
+          <div class="col" style="gap:12px;">
+            <table class="clean-table">
+              <thead>
+                <tr>
+                  <th>Direction</th>
+                  <th>Message <code>type</code></th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="tag teal">C → S</span></td>
+                  <td><code>HELLO</code>, <code>CREATE_ROOM</code>, <code>JOIN_ROOM</code></td>
+                  <td>Nickname &amp; room registry lookup</td>
+                </tr>
+                <tr>
+                  <td><span class="tag teal">C → S</span></td>
+                  <td><code>SET_READY</code>, <code>START_GAME</code></td>
+                  <td>Wakes workers via <code>RoomStateMonitor</code></td>
+                </tr>
+                <tr>
+                  <td><span class="tag teal">C → S</span></td>
+                  <td><code>MOVE</code>, <code>INTERACT</code>, <code>CHOP</code></td>
+                  <td>20 Hz input, grab/drop/plate/serve</td>
+                </tr>
+                <tr>
+                  <td><span class="tag terracotta">S → C</span></td>
+                  <td><code>WELCOME</code>, <code>LOBBY_STATE</code>, <code>GAME_START</code></td>
+                  <td>Seat assignment &amp; static 12×8 map</td>
+                </tr>
+                <tr>
+                  <td><span class="tag terracotta">S → C</span></td>
+                  <td><code>STATE_SNAPSHOT</code> (20 Hz)</td>
+                  <td>Lamport <code>seq</code>, chefs, stations, orders, plates</td>
+                </tr>
+                <tr>
+                  <td><span class="tag terracotta">S → C</span></td>
+                  <td><code>GAME_EVENT</code>, <code>GAME_OVER</code></td>
+                  <td>Audio cues, score popups, star rating</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="code-panel">
+              <div class="code-head">
+                <span>Actual Raw TCP Frames on Port 6789</span>
+                <span class="lang json">UTF-8 JSON Lines</span>
+              </div>
+<pre class="tiny"><span class="cm">// Client → Server (joystick + grab)</span>
+{<span class="str">"type"</span>:<span class="str">"MOVE"</span>,<span class="str">"dx"</span>:<span class="num">0.85</span>,<span class="str">"dy"</span>:<span class="num">0.0</span>,<span class="str">"facing"</span>:<span class="str">"E"</span>}\n
+{<span class="str">"type"</span>:<span class="str">"INTERACT"</span>}\n
+<span class="cm">// Server → Client (authoritative snapshot with Lamport clock seq)</span>
+{<span class="str">"type"</span>:<span class="str">"STATE_SNAPSHOT"</span>,<span class="str">"seq"</span>:<span class="num">412</span>,<span class="str">"score"</span>:<span class="num">180</span>,<span class="str">"cleanPlates"</span>:<span class="num">3</span>,<span class="str">"orders"</span>:[...]}\n</pre>
+            </div>
+          </div>
+
+          <!-- Thread Topology -->
+          <div class="col" style="gap:10px;">
+            <h3 style="margin-bottom:2px;">Explicit Thread Model Per Room</h3>
+            <p style="font-size:13.2px;margin-bottom:4px;">
+              Every thread interacting with stations gets a fixed integer <code>pid ∈ [0..5]</code>, enabling Lamport's Bakery without dynamic thread ID issues.
+            </p>
+
+            <div class="slot-row">
+              <span class="slot-num terracotta">PID 0..3</span>
+              <div style="font-size:13px;">
+                <strong>ClientHandlerThread (×1..4)</strong>
+                <div style="font-size:12px;color:var(--ink-muted);">Reads TCP commands, locks Player + Station, serves orders</div>
+              </div>
+            </div>
+
+            <div class="slot-row">
+              <span class="slot-num teal">PID 4</span>
+              <div style="font-size:13px;">
+                <strong>GameTickThread (20 Hz)</strong>
+                <div style="font-size:12px;color:var(--ink-muted);">Updates stove cook/burn timers, expires orders, emits snapshots</div>
+              </div>
+            </div>
+
+            <div class="slot-row">
+              <span class="slot-num ochre">PID 5</span>
+              <div style="font-size:13px;">
+                <strong>DishwasherThread</strong>
+                <div style="font-size:12px;color:var(--ink-muted);">Sleeps on <code>dirtyPlates.P()</code>, washes 4s, returns clean plate</div>
+              </div>
+            </div>
+
+            <div class="slot-row">
+              <span class="slot-num slate">PROD</span>
+              <div style="font-size:13px;">
+                <strong>OrderGeneratorThread</strong>
+                <div style="font-size:12px;color:var(--ink-muted);">Generates timed orders; blocks on <code>emptySlots.P()</code> at 5/5</div>
+              </div>
+            </div>
+
+            <div class="slot-row">
+              <span class="slot-num">CONS</span>
+              <div style="font-size:13px;">
+                <strong>RoomBroadcasterThread</strong>
+                <div style="font-size:12px;color:var(--ink-muted);">Drains <code>BoundedBuffer(64)</code> so slow sockets never stall simulation</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>06 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 07: CONCURRENCY MAP ==================== -->
+    <section class="slide" data-title="CMPE 436 Concurrency Map" data-notes="Give Prof. Alper Şen a complete map of all 10 real concurrency problems in Undercooked, the exact custom class we built to solve each one, and the exact lecture reference. Then we dive into the actual code for the most interesting ones.">
+      <div class="slide-top">
+        <span class="kicker"><span class="dot"></span>04 / CONCURRENCY DESIGN</span>
+        <span class="slide-ref">10 REAL SCENARIOS · 100% HAND-ROLLED PRIMITIVES</span>
+      </div>
+      <div class="slide-body">
+        <h2>Mapping Every Kitchen Race Condition to CMPE 436</h2>
+        <table class="clean-table" style="font-size:12px;">
+          <thead>
+            <tr>
+              <th style="width:52px;">ID</th>
+              <th style="width:210px;">Gameplay Scenario</th>
+              <th style="width:215px;">Concurrency Hazard</th>
+              <th style="width:270px;">Hand-Rolled Primitive</th>
+              <th>Lecture Ref</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>C1</strong></td>
+              <td>Concurrent Mobile Clients</td>
+              <td>Blocking single-thread <code>accept()</code></td>
+              <td><code>ServerSocket</code> + explicit <code>Thread</code>s</td>
+              <td><code>lecture4-2</code> p.45–50</td>
+            </tr>
+            <tr>
+              <td><strong>C2</strong></td>
+              <td>Contested Stove / Chop Board</td>
+              <td>Read-Modify-Write item duplication</td>
+              <td><code>BakeryLock(6)</code> + volatile wrappers</td>
+              <td><code>lecture2</code> p.31–33</td>
+            </tr>
+            <tr>
+              <td><strong>C3</strong></td>
+              <td>Order Board Capacity (Max 5)</td>
+              <td>Unbounded growth / busy waiting</td>
+              <td><code>CountingSemaphore(5)</code> + <code>BinarySemaphore</code></td>
+              <td><code>lecture3</code> p.14–20</td>
+            </tr>
+            <tr>
+              <td><strong>C4</strong></td>
+              <td>Simultaneous Serve / Expiry</td>
+              <td>Check-then-Act double scoring</td>
+              <td>Atomic transaction on <code>orderMutex</code></td>
+              <td><code>lecture3</code> p.62–67</td>
+            </tr>
+            <tr>
+              <td><strong>C5</strong></td>
+              <td>Shared 4 Plates &amp; Dishwasher</td>
+              <td>Plate leaks / polling CPU burn</td>
+              <td><code>CountingSemaphore(0)</code> event ordering</td>
+              <td><code>lecture3</code> p.8–12</td>
+            </tr>
+            <tr>
+              <td><strong>C6</strong></td>
+              <td>Player ↔ Station Plating/Swap</td>
+              <td>Circular Wait Deadlock</td>
+              <td><code>ResourceLocker</code> ascending <code>resourceId</code></td>
+              <td><code>lecture4-1</code> p.9, 15</td>
+            </tr>
+            <tr>
+              <td><strong>C7</strong></td>
+              <td>20 Hz Broadcast Fan-Out</td>
+              <td>Slow socket stalls sim / torn JSON</td>
+              <td><code>BoundedBuffer&lt;String&gt;(64)</code> + <code>writeMutex</code></td>
+              <td><code>lecture3</code> p.15–20</td>
+            </tr>
+            <tr>
+              <td><strong>C8</strong></td>
+              <td>World Snapshot vs. Mutations</td>
+              <td>Torn reads / writer starvation</td>
+              <td>Writer-fair <code>ReadersWritersLock</code></td>
+              <td><code>lecture3</code> p.21–24</td>
+            </tr>
+            <tr>
+              <td><strong>C9</strong></td>
+              <td>Lobby Ready / Shift Lifecycle</td>
+              <td>Spin-waiting &amp; spurious wakeups</td>
+              <td><code>RoomStateMonitor</code> (<code>while</code>+<code>notifyAll</code>)</td>
+              <td><code>lecture3</code> p.38–58</td>
+            </tr>
+            <tr>
+              <td><strong>C10</strong></td>
+              <td>Global Room Create / Join</td>
+              <td>Seat overflow / duplicate room code</td>
+              <td><code>RoomRegistry</code> + <code>BinarySemaphore</code> &amp; <code>HWMutex</code></td>
+              <td><code>lecture2</code> p.41, <code>lec3</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:12px;display:flex;gap:12px;align-items:center;font-size:12.5px;color:var(--ink-soft);">
+          <span class="tag ochre">Also Implemented &amp; Stress-Tested</span>
+          <span><code>PetersonLock</code> (2-thread software mutex), <code>TestAndSet</code> / <code>HWMutex</code> (ID generation), <code>ListQueue&lt;T&gt;</code> (Java Monitor queue), and <code>LamportClock</code> (<code>lecture5-2</code> / <code>lecture10</code> monotonic snapshot ordering).</span>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>07 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 08: BAKERY LOCK ==================== -->
+    <section class="slide" data-title="Contested Stations: Lamport's BakeryLock" data-notes="Walk through BakeryLock.java line-by-line. Highlight two deep details Prof. Alper Şen will appreciate: (1) Why Bakery is a natural fit here (fixed bounded N=6 threads per room avoids Bakery's dynamic thread weakness while giving FIFO starvation-freedom), and (2) How we handled the Java Memory Model without java.util.concurrent.atomic by wrapping array slots in VolatileBool/VolatileInt objects.">
+      <div class="slide-top">
+        <span class="kicker"><span class="dot"></span>04 / CODE DEEP DIVE — SCENARIO C2</span>
+        <span class="slide-ref">CMPE 436 LECTURE 2 (SLIDES 31–33) · MUTUAL EXCLUSION</span>
+      </div>
+      <div class="slide-body">
+        <h2>Contested Stations: Lamport's <code>BakeryLock</code></h2>
+        <div class="grid-55-45">
+          <div class="code-panel">
+            <div class="code-head">
+              <span>server/.../concurrency/BakeryLock.java</span>
+              <span class="lang java">Java · N-Thread Software Mutex</span>
+            </div>
+<pre class="compact"><span class="kw">private static final class</span> <span class="ty">VolatileBool</span> { <span class="kw">volatile boolean</span> value; }
+<span class="kw">private static final class</span> <span class="ty">VolatileInt</span>  { <span class="kw">volatile int</span> value; }
+
+<span class="kw">public void</span> <span class="fn">requestCS</span>(<span class="kw">int</span> pid) {
+  <span class="cm">// Step 1: Doorway — take ticket &gt; all visible tickets</span>
+<span class="hl">  choosing[pid].value = <span class="kw">true</span>;</span>
+  <span class="kw">int</span> max = <span class="num">0</span>;
+  <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; numThreads; j++)
+    max = <span class="ty">Math</span>.<span class="fn">max</span>(max, number[j].value);
+<span class="hl">  number[pid].value = <span class="num">1</span> + max;</span>
+  choosing[pid].value = <span class="kw">false</span>;
+
+  <span class="cm">// Step 2: Wait for every j with smaller (number[j], j)</span>
+  <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; numThreads; j++) {
+    <span class="kw">if</span> (j == pid) <span class="kw">continue</span>;
+    <span class="kw">while</span> (choosing[j].value) <span class="ty">Thread</span>.<span class="fn">yield</span>();
+    <span class="kw">while</span> (<span class="kw">true</span>) {
+      <span class="kw">int</span> numJ = number[j].value, numP = number[pid].value;
+<span class="hl-teal">      <span class="kw">if</span> (numJ != <span class="num">0</span> &amp;&amp; (numJ &lt; numP || (numJ == numP &amp;&amp; j &lt; pid)))</span>
+        <span class="ty">Thread</span>.<span class="fn">yield</span>();
+      <span class="kw">else break</span>;
+    }
+  }
+}
+
+<span class="kw">public void</span> <span class="fn">releaseCS</span>(<span class="kw">int</span> pid) { number[pid].value = <span class="num">0</span>; }</pre>
+          </div>
+
+          <div class="col" style="gap:12px;">
+            <div class="card">
+              <h3>The Kitchen Race</h3>
+              <p style="font-size:13.5px;">
+                Chef 0 and Chef 1 stand next to <strong>Stove #0</strong> (holding 1 <code>COOKED_PATTY</code>) and tap <code>GRAB</code> at the exact same millisecond. Without exclusion, both read the patty → <strong>item duplication</strong>!
+              </p>
+            </div>
+
+            <div class="card-accent teal">
+              <h3>Why Bakery Fits Undercooked</h3>
+              <ul class="clean teal" style="margin-top:4px;">
+                <li><strong>Bounded slots (N = 6):</strong> Directly solves slide 38's caveat ("awkward for dynamic threads").</li>
+                <li><strong>FIFO Fairness:</strong> Strictly ordered by <code>(ticket, pid)</code> — no chef can be starved at a busy stove.</li>
+                <li><strong>Natural Ticket Reset:</strong> Once all slots release (<code>0</code>), the next ticket resets cleanly to <code>1</code>.</li>
+              </ul>
+            </div>
+
+            <div class="card-accent">
+              <h3>Real Multi-Core JMM Engineering</h3>
+              <p style="font-size:13.2px;">
+                In Java, <code>volatile int[]</code> makes only the <em>array reference</em> volatile — not its elements! Wrapping each slot in <code>VolatileInt</code>/<code>VolatileBool</code> guarantees happens-before visibility on multi-core CPUs with <strong>zero</strong> <code>j.u.c.atomic</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>08 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 09: DEADLOCK PREVENTION ==================== -->
+    <section class="slide" data-title="Deadlock Prevention: ResourceLocker" data-notes="Explain Scenario C6: whenever a chef interacts with a station (grabbing, dropping, plating, or swapping), we mutate BOTH the Player object and the Station object atomically. To prevent Circular Wait deadlocks, every lockable object has an immutable integer resourceId, and ResourceLocker strictly acquires the smaller ID first.">
+      <div class="slide-top">
+        <span class="kicker ochre"><span class="dot"></span>04 / CODE DEEP DIVE — SCENARIO C6</span>
+        <span class="slide-ref">CMPE 436 LECTURE 4-1 (SLIDES 9, 15) · BREAKING CIRCULAR WAIT</span>
+      </div>
+      <div class="slide-body">
+        <h2>Multi-Resource Plating &amp; Deadlock Prevention</h2>
+        <div class="grid-55-45">
+          <div class="col" style="gap:10px;">
+            <div class="code-panel" style="flex:1;">
+              <div class="code-head">
+                <span>server/.../concurrency/ResourceLocker.java</span>
+                <span class="lang java">Java · Strict Linear Ordering</span>
+              </div>
+<pre class="compact"><span class="kw">public static</span> &lt;<span class="ty">T</span>&gt; <span class="ty">T</span> <span class="fn">callWithOrderedLocks</span>(
+    <span class="kw">int</span> pid, <span class="ty">LockableResource</span> a, <span class="ty">LockableResource</span> b, <span class="ty">Action</span>&lt;<span class="ty">T</span>&gt; act) {
+
+  <span class="cm">// Always lock smaller resourceId first → breaks Circular Wait</span>
+<span class="hl">  <span class="ty">LockableResource</span> first  = (a.<span class="fn">getResourceId</span>() &lt; b.<span class="fn">getResourceId</span>()) ? a : b;</span>
+<span class="hl">  <span class="ty">LockableResource</span> second = (a.<span class="fn">getResourceId</span>() &lt; b.<span class="fn">getResourceId</span>()) ? b : a;</span>
+
+  first.<span class="fn">getLock</span>().<span class="fn">requestCS</span>(pid);
+  <span class="kw">try</span> {
+    second.<span class="fn">getLock</span>().<span class="fn">requestCS</span>(pid);
+    <span class="kw">try</span> {
+      <span class="kw">return</span> act.<span class="fn">execute</span>();
+    } <span class="kw">finally</span> { second.<span class="fn">getLock</span>().<span class="fn">releaseCS</span>(pid); }
+  } <span class="kw">finally</span> { first.<span class="fn">getLock</span>().<span class="fn">releaseCS</span>(pid); }
+}</pre>
+            </div>
+
+            <div class="code-panel">
+              <div class="code-head">
+                <span>server/.../game/Room.java — handleInteract()</span>
+                <span class="lang java">Java · Call Site</span>
+              </div>
+<pre class="tiny"><span class="ty">ResourceLocker</span>.<span class="fn">withOrderedLocks</span>(pid, player, station, () -&gt; {
+  <span class="fn">performInteractionLocked</span>(player, station, pendingEvents); <span class="cm">// atomic hand ↔ station</span>
+});</pre>
+            </div>
+          </div>
+
+          <div class="col" style="gap:12px;">
+            <div class="card" style="padding:14px;">
+              <h3 style="margin-bottom:10px;">Wait-For Graph: Cycle vs. Total Order</h3>
+              <svg viewBox="0 0 420 228" width="100%" xmlns="http://www.w3.org/2000/svg" style="font-family:Inter, sans-serif;">
+                <!-- Bad side -->
+                <rect x="4" y="4" width="194" height="218" rx="5" fill="#FBECE9" stroke="#ECC2B9"/>
+                <text x="16" y="24" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#A83222">UNORDERED → DEADLOCK</text>
+
+                <rect x="24" y="46" width="66" height="34" rx="4" fill="#FFFFFF" stroke="#D94E3B" stroke-width="1.4"/>
+                <text x="57" y="67" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#14161A">Res A</text>
+
+                <rect x="114" y="46" width="66" height="34" rx="4" fill="#FFFFFF" stroke="#D94E3B" stroke-width="1.4"/>
+                <text x="147" y="67" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#14161A">Res B</text>
+
+                <circle cx="57" cy="146" r="22" fill="#161920"/>
+                <text x="57" y="150" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#F4F2EC">T1</text>
+
+                <circle cx="147" cy="146" r="22" fill="#161920"/>
+                <text x="147" y="150" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#F4F2EC">T2</text>
+
+                <!-- Cycle arrows -->
+                <line x1="57" y1="80" x2="57" y2="122" stroke="#14161A" stroke-width="1.5"/>
+                <line x1="147" y1="80" x2="147" y2="122" stroke="#14161A" stroke-width="1.5"/>
+                <line x1="74" y1="130" x2="130" y2="83" stroke="#D94E3B" stroke-width="1.7" stroke-dasharray="4 2"/>
+                <line x1="130" y1="130" x2="74" y2="83" stroke="#D94E3B" stroke-width="1.7" stroke-dasharray="4 2"/>
+
+                <text x="101" y="192" text-anchor="middle" font-size="11" font-weight="600" fill="#A83222">T1 holds A, waits B</text>
+                <text x="101" y="208" text-anchor="middle" font-size="11" font-weight="600" fill="#A83222">T2 holds B, waits A</text>
+
+                <!-- Good side -->
+                <rect x="212" y="4" width="204" height="218" rx="5" fill="#E6F3F2" stroke="#B6DCD9"/>
+                <text x="224" y="24" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#195E59">ORDERED → ACYCLIC DAG</text>
+
+                <rect x="234" y="46" width="160" height="36" rx="4" fill="#FFFFFF" stroke="#237A74" stroke-width="1.5"/>
+                <text x="314" y="62" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#14161A">Player (id: 0..3)</text>
+                <text x="314" y="76" text-anchor="middle" font-size="9.5" fill="#237A74">Always acquired 1st</text>
+
+                <line x1="314" y1="82" x2="314" y2="124" stroke="#237A74" stroke-width="2"/>
+                <polygon points="309,119 319,119 314,127" fill="#237A74"/>
+
+                <rect x="234" y="128" width="160" height="36" rx="4" fill="#FFFFFF" stroke="#237A74" stroke-width="1.5"/>
+                <text x="314" y="144" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#14161A">Station (id: 10..49)</text>
+                <text x="314" y="158" text-anchor="middle" font-size="9.5" fill="#237A74">Always acquired 2nd</text>
+
+                <text x="314" y="192" text-anchor="middle" font-size="11" font-weight="600" fill="#195E59">Every edge goes strictly</text>
+                <text x="314" y="208" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#195E59">id(first) &lt; id(second)</text>
+              </svg>
+            </div>
+
+            <div class="card-accent ochre">
+              <h3>Proven by Contradiction</h3>
+              <p style="font-size:13.2px;">
+                If a circular wait existed, resource IDs around the cycle would satisfy <code>id₁ &lt; id₂ &lt; … &lt; id₁</code> — impossible. Verified under opposing <code>(a,b)</code> vs. <code>(b,a)</code> transfer stress tests with <strong>0 deadlocks</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>09 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 10: BOUNDED BUFFER & SEMAPHORES ==================== -->
+    <section class="slide" data-title="Producer–Consumer: Semaphores & BoundedBuffer" data-notes="Highlight the classic Bounded Buffer Attempt 2 vs Attempt 3 deadlock trap from Lecture 3 slides 17–19. Show how our CountingSemaphore uses while(value==0) wait() + notifyAll(), and how BoundedBuffer always acquires emptySlots.P() or filledSlots.P() BEFORE mutex.P(). Mention it powers our 64-frame BroadcastQueue so slow mobile TCP sockets never stall the 20 Hz GameTickThread.">
+      <div class="slide-top">
+        <span class="kicker teal"><span class="dot"></span>04 / CODE DEEP DIVE — SCENARIOS C3 &amp; C7</span>
+        <span class="slide-ref">CMPE 436 LECTURE 3 (SLIDES 10–20) · PRODUCER–CONSUMER</span>
+      </div>
+      <div class="slide-body">
+        <h2>Custom Semaphores &amp; Deadlock-Free <code>BoundedBuffer&lt;T&gt;</code></h2>
+        <div class="grid-55-45">
+          <div class="col" style="gap:10px;">
+            <div class="code-panel" style="flex:1;">
+              <div class="code-head">
+                <span>server/.../concurrency/BoundedBuffer.java</span>
+                <span class="lang java">Java · Attempt 2 Ordering</span>
+              </div>
+<pre class="compact"><span class="kw">private final</span> <span class="ty">BinarySemaphore</span>   mutex       = <span class="kw">new</span> <span class="ty">BinarySemaphore</span>(<span class="kw">true</span>);
+<span class="kw">private final</span> <span class="ty">CountingSemaphore</span> emptySlots;  <span class="cm">// initially capacity</span>
+<span class="kw">private final</span> <span class="ty">CountingSemaphore</span> filledSlots; <span class="cm">// initially 0</span>
+
+<span class="kw">public void</span> <span class="fn">deposit</span>(<span class="ty">T</span> item) {
+<span class="hl-teal">  emptySlots.<span class="fn">P</span>();   <span class="cm">// 1. Wait for free slot FIRST (no mutex held!)</span></span>
+  mutex.<span class="fn">P</span>();        <span class="cm">// 2. Enter circular buffer CS</span>
+  <span class="kw">try</span> {
+    buffer[inBuf] = item;
+    inBuf = (inBuf + <span class="num">1</span>) % capacity;
+    count++;
+  } <span class="kw">finally</span> { mutex.<span class="fn">V</span>(); }
+  filledSlots.<span class="fn">V</span>();  <span class="cm">// 3. Wake blocked consumer</span>
+}
+
+<span class="kw">public</span> <span class="ty">T</span> <span class="fn">fetch</span>() {
+<span class="hl-teal">  filledSlots.<span class="fn">P</span>();  <span class="cm">// 1. Wait for available item FIRST</span></span>
+  mutex.<span class="fn">P</span>();
+  <span class="kw">try</span> {
+    <span class="ty">T</span> item = (<span class="ty">T</span>) buffer[outBuf];
+    buffer[outBuf] = <span class="kw">null</span>;
+    outBuf = (outBuf + <span class="num">1</span>) % capacity;
+    count--; <span class="kw">return</span> item;
+  } <span class="kw">finally</span> { mutex.<span class="fn">V</span>(); emptySlots.<span class="fn">V</span>(); }
+}</pre>
+            </div>
+          </div>
+
+          <div class="col" style="gap:11px;">
+            <div class="code-panel">
+              <div class="code-head">
+                <span>server/.../concurrency/CountingSemaphore.java</span>
+                <span class="lang java">Java Monitor Basis</span>
+              </div>
+<pre class="tiny"><span class="kw">public synchronized void</span> <span class="fn">P</span>() {
+<span class="hl">  <span class="kw">while</span> (value == <span class="num">0</span>) <span class="ty">Util</span>.<span class="fn">myWait</span>(<span class="kw">this</span>); <span class="cm">// while, never if!</span></span>
+  value--;
+}
+<span class="kw">public synchronized void</span> <span class="fn">V</span>() {
+  value++;
+  <span class="fn">notifyAll</span>(); <span class="cm">// safer than notify() under interrupts</span>
+}</pre>
+            </div>
+
+            <div class="card-accent">
+              <h3>Why P() Order Matters (Slide 19 Trap)</h3>
+              <p style="font-size:13px;">
+                Swapping to <code>mutex.P()</code> before <code>emptySlots.P()</code> causes <strong>instant deadlock</strong> when full: Producer sleeps holding <code>mutex</code>, so Consumer can never enter to free a slot!
+              </p>
+            </div>
+
+            <div class="card-accent teal">
+              <h3>Used in 2 Critical Pipelines</h3>
+              <ul class="clean teal" style="margin-top:4px;">
+                <li><strong>BroadcastQueue (Cap 64):</strong> Decouples 20 Hz <code>GameTickThread</code> from slow mobile TCP writes drained by <code>RoomBroadcasterThread</code>.</li>
+                <li><strong>OrderBoard (Cap 5):</strong> Blocks <code>OrderGeneratorThread</code> on <code>emptySlots.P()</code> with 0% CPU when 5 orders are active.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>10 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 11: ATOMIC ORDERS & DISHWASHER ==================== -->
+    <section class="slide" data-title="Atomic Order Transactions & PlatePool" data-notes="Show two gameplay-critical code patterns side-by-side: (1) Left: OrderBoard.tryCompleteOrder executes matching, completion flag, removal, and scoring as a single atomic transaction under orderMutex so two chefs serving the last Burger (or serving at exact expiry millisecond) can never double-score. (2) Right: PlatePool + DishwasherThread using CountingSemaphore event ordering while keeping player TCP grabs non-blocking.">
+      <div class="slide-top">
+        <span class="kicker"><span class="dot"></span>04 / CODE DEEP DIVE — SCENARIOS C4 &amp; C5</span>
+        <span class="slide-ref">ATOMIC TRANSACTIONS (LEC 3 p.66) · EVENT ORDERING (LEC 3 p.12)</span>
+      </div>
+      <div class="slide-body">
+        <h2>Atomic Order Serving &amp; Semaphore Dishwasher Pool</h2>
+        <div class="grid-2" style="gap:18px;">
+          <!-- Left: OrderBoard Atomic Transaction -->
+          <div class="col" style="gap:10px;">
+            <div class="code-panel" style="flex:1;">
+              <div class="code-head">
+                <span>server/.../game/OrderBoard.java</span>
+                <span class="lang java">C4 · Atomic Serve</span>
+              </div>
+<pre class="compact"><span class="kw">public</span> <span class="ty">ServeResult</span> <span class="fn">tryCompleteOrder</span>(<span class="ty">Item</span> dish, <span class="kw">long</span> now) {
+  <span class="ty">Recipe</span> target = <span class="ty">Recipe</span>.<span class="fn">matchPlate</span>(dish);
+  <span class="kw">boolean</span> freedSlot = <span class="kw">false</span>;
+
+<span class="hl">  orderMutex.<span class="fn">P</span>(); <span class="cm">// Same mutex used by expireOverdueOrders()!</span></span>
+  <span class="kw">try</span> {
+    <span class="ty">Order</span> match = <span class="fn">findOldestActive</span>(target, now);
+    <span class="kw">if</span> (match != <span class="kw">null</span>) {
+      match.<span class="fn">markCompleted</span>();
+      activeOrders.<span class="fn">remove</span>(match);
+      freedSlot = <span class="kw">true</span>;
+      score += target.<span class="fn">getBasePoints</span>() + speedBonus + comboBonus;
+      combo++;
+    } <span class="kw">else</span> {
+      score = <span class="ty">Math</span>.<span class="fn">max</span>(<span class="num">0</span>, score - WRONG_DISH_PENALTY);
+      combo = <span class="num">0</span>;
+    }
+  } <span class="kw">finally</span> { orderMutex.<span class="fn">V</span>(); }
+
+<span class="hl-teal">  <span class="kw">if</span> (freedSlot) emptySlots.<span class="fn">V</span>(); <span class="cm">// Wake OrderGenerator</span></span>
+  <span class="kw">return</span> result;
+}</pre>
+            </div>
+            <div class="card-muted" style="padding:10px 13px;font-size:12.6px;">
+              <strong>Safety Guarantee:</strong> Every order reaches <strong>at most one</strong> terminal state (<code>COMPLETED</code> or <code>EXPIRED</code>) — never both, never twice.
+            </div>
+          </div>
+
+          <!-- Right: PlatePool & DishwasherThread -->
+          <div class="col" style="gap:10px;">
+            <div class="code-panel" style="flex:1;">
+              <div class="code-head">
+                <span>server/.../game/PlatePool.java</span>
+                <span class="lang java">C5 · Finite 4 Plates</span>
+              </div>
+<pre class="tiny"><span class="kw">private final</span> <span class="ty">BinarySemaphore</span>   plateMutex  = <span class="kw">new</span> <span class="ty">BinarySemaphore</span>(<span class="kw">true</span>);
+<span class="kw">private</span>       <span class="ty">CountingSemaphore</span> dirtyPlates = <span class="kw">new</span> <span class="ty">CountingSemaphore</span>(<span class="num">0</span>);
+
+<span class="cm">// Non-blocking grab so TCP thread never freezes when 0 clean</span>
+<span class="kw">public boolean</span> <span class="fn">tryTakeCleanPlate</span>() {
+  plateMutex.<span class="fn">P</span>();
+  <span class="kw">try</span> {
+    <span class="kw">if</span> (cleanPlates &lt;= <span class="num">0</span>) <span class="kw">return false</span>; <span class="cm">// → sends TOAST</span>
+    cleanPlates--; <span class="kw">return true</span>;
+  } <span class="kw">finally</span> { plateMutex.<span class="fn">V</span>(); }
+}
+
+<span class="cm">// Serving Window signals DishwasherThread (Event Ordering)</span>
+<span class="kw">public void</span> <span class="fn">submitDirtyPlate</span>() {
+  plateMutex.<span class="fn">P</span>();
+  <span class="kw">try</span> { washingPlates++; } <span class="kw">finally</span> { plateMutex.<span class="fn">V</span>(); }
+<span class="hl-teal">  dirtyPlates.<span class="fn">V</span>(); <span class="cm">// Wakes sleeping DishwasherThread</span></span>
+}
+
+<span class="cm">// Executed ONLY by DishwasherThread (holding 0 other locks)</span>
+<span class="kw">public void</span> <span class="fn">washOnePlateBlocking</span>(<span class="kw">long</span> ms) <span class="kw">throws</span> <span class="ty">InterruptedException</span> {
+<span class="hl">  dirtyPlates.<span class="fn">PInterruptible</span>(); <span class="cm">// 0% CPU until dirty plate</span></span>
+  <span class="ty">Thread</span>.<span class="fn">sleep</span>(ms);             <span class="cm">// 4000ms wash cycle</span>
+  plateMutex.<span class="fn">P</span>();
+  <span class="kw">try</span> { washingPlates--; cleanPlates++; }
+  <span class="kw">finally</span> { plateMutex.<span class="fn">V</span>(); }
+}</pre>
+            </div>
+            <div class="card-muted" style="padding:10px 13px;font-size:12.6px;">
+              <strong>Conservation Invariant:</strong> <code>dispenser + inHands/counters + washing == 4</code> always.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>11 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 12: READERS-WRITERS & MONITORS ==================== -->
+    <section class="slide" data-title="ReadersWritersLock, RoomStateMonitor & LamportClock" data-notes="Explain how we prevent writer starvation in ReadersWritersLock (explicitly addressing lecture3 slides 23-24 by making incoming readers wait when waitingWriters > 0), how RoomStateMonitor uses Mesa-style while() wait + notifyAll() to coordinate worker lifecycles without busy-waiting, and how LamportClock stamps every broadcast snapshot.">
+      <div class="slide-top">
+        <span class="kicker teal"><span class="dot"></span>04 / CODE DEEP DIVE — SCENARIOS C8 &amp; C9</span>
+        <span class="slide-ref">READERS–WRITERS · MESA MONITORS · LAMPORT LOGICAL CLOCK</span>
+      </div>
+      <div class="slide-body">
+        <h2>Writer-Fair <code>ReadersWritersLock</code>, Monitors &amp; Logical Clocks</h2>
+        <div class="grid-2" style="gap:18px;">
+          <!-- Left: ReadersWritersLock -->
+          <div class="col" style="gap:10px;">
+            <div class="code-panel" style="flex:1;">
+              <div class="code-head">
+                <span>server/.../concurrency/ReadersWritersLock.java</span>
+                <span class="lang java">C8 · Writer-Fair Monitor</span>
+              </div>
+<pre class="tiny"><span class="kw">private int</span>     activeReaders  = <span class="num">0</span>;
+<span class="kw">private boolean</span> activeWriter   = <span class="kw">false</span>;
+<span class="kw">private int</span>     waitingWriters = <span class="num">0</span>;
+
+<span class="kw">public synchronized void</span> <span class="fn">startRead</span>() {
+  <span class="cm">// Fixes lecture3 p.23–24 writer starvation flaw!</span>
+<span class="hl">  <span class="kw">while</span> (activeWriter || waitingWriters &gt; <span class="num">0</span>)</span>
+    <span class="ty">Util</span>.<span class="fn">myWait</span>(<span class="kw">this</span>);
+  activeReaders++;
+}
+
+<span class="kw">public synchronized void</span> <span class="fn">endRead</span>() {
+  activeReaders--;
+  <span class="kw">if</span> (activeReaders == <span class="num">0</span>) <span class="fn">notifyAll</span>();
+}
+
+<span class="kw">public synchronized void</span> <span class="fn">startWrite</span>() {
+  waitingWriters++;
+  <span class="kw">try</span> {
+    <span class="kw">while</span> (activeWriter || activeReaders &gt; <span class="num">0</span>)
+      <span class="ty">Util</span>.<span class="fn">myWait</span>(<span class="kw">this</span>);
+    activeWriter = <span class="kw">true</span>;
+  } <span class="kw">finally</span> { waitingWriters--; }
+}
+
+<span class="kw">public synchronized void</span> <span class="fn">endWrite</span>() { activeWriter = <span class="kw">false</span>; <span class="fn">notifyAll</span>(); }</pre>
+            </div>
+            <div class="card-muted" style="padding:9px 13px;font-size:12.5px;">
+              Concurrent 20 Hz snapshot reads &amp; moves run in parallel; structural joins/leaves/resets take exclusive write lock without starving.
+            </div>
+          </div>
+
+          <!-- Right: RoomStateMonitor + LamportClock -->
+          <div class="col" style="gap:10px;">
+            <div class="code-panel">
+              <div class="code-head">
+                <span>server/.../game/RoomStateMonitor.java</span>
+                <span class="lang java">C9 · Mesa Monitor</span>
+              </div>
+<pre class="compact"><span class="kw">public synchronized boolean</span> <span class="fn">waitUntilPlaying</span>()
+    <span class="kw">throws</span> <span class="ty">InterruptedException</span> {
+  <span class="cm">// Strict while-loop protects against spurious wakeups</span>
+<span class="hl-teal">  <span class="kw">while</span> (state == <span class="ty">State</span>.WAITING || state == <span class="ty">State</span>.FINISHED) {</span>
+    <span class="fn">wait</span>();
+  }
+  <span class="kw">return</span> state == <span class="ty">State</span>.PLAYING;
+}
+
+<span class="kw">public synchronized void</span> <span class="fn">transitionTo</span>(<span class="ty">State</span> next) {
+  <span class="kw">this</span>.state = next;
+<span class="hl-teal">  <span class="fn">notifyAll</span>(); <span class="cm">// Wakes Tick, OrderGen, Dishwasher together</span></span>
+}</pre>
+            </div>
+
+            <div class="code-panel" style="flex:1;">
+              <div class="code-head">
+                <span>server/.../concurrency/LamportClock.java</span>
+                <span class="lang java">Lecture 5-2 / 10</span>
+              </div>
+<pre class="compact"><span class="kw">public class</span> <span class="ty">LamportClock</span> {
+  <span class="kw">private long</span> time = <span class="num">0</span>;
+
+  <span class="kw">public synchronized long</span> <span class="fn">tick</span>() { <span class="kw">return</span> ++time; }
+  <span class="kw">public synchronized long</span> <span class="fn">update</span>(<span class="kw">long</span> recv) {
+    time = <span class="ty">Math</span>.<span class="fn">max</span>(time, recv) + <span class="num">1</span>;
+    <span class="kw">return</span> time;
+  }
+}</pre>
+            </div>
+
+            <div class="card-muted" style="padding:9px 13px;font-size:12.5px;">
+              Every <code>STATE_SNAPSHOT</code> &amp; <code>GAME_EVENT</code> carries a strictly monotonic Lamport <code>seq</code> for total causal ordering.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>12 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 13: GLOBAL LOCK HIERARCHY PROOF ==================== -->
+    <section class="slide" data-title="Global Lock Hierarchy (Deadlock-Freedom Proof)" data-notes="Present our formal system-wide deadlock-freedom argument. Even if every individual class is thread-safe, nesting locks carelessly across layers can deadlock. Our server enforces a strict 6-level partial order (DAG) plus the Critical Non-Blocking Rule: blocking condition semaphores are never called while holding any other lock.">
+      <div class="slide-top">
+        <span class="kicker ochre"><span class="dot"></span>05 / FORMAL SAFETY PROOF</span>
+        <span class="slide-ref">SYSTEM-WIDE DEADLOCK FREEDOM · ACYCLIC LOCK GRAPH</span>
+      </div>
+      <div class="slide-body">
+        <h2>Global Lock Hierarchy — Proving Zero Deadlocks</h2>
+        <div class="grid-60-40">
+          <!-- 6-Level Hierarchy SVG -->
+          <div class="card" style="padding:14px 18px;display:flex;align-items:center;justify-content:center;">
+            <svg viewBox="0 0 650 470" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="font-family:Inter, sans-serif;">
+              <!-- Level 0 -->
+              <rect x="20" y="10" width="610" height="54" rx="5" fill="#161920"/>
+              <rect x="30" y="20" width="76" height="34" rx="4" fill="#D94E3B"/>
+              <text x="68" y="42" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#FFFFFF">LEVEL 0</text>
+              <text x="122" y="34" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#F4F2EC">RoomRegistry.registryMutex</text>
+              <text x="122" y="52" font-size="11.5" fill="#A6ADB9">BinarySemaphore — room create / join / leave only (never nests deeper)</text>
+
+              <line x1="325" y1="64" x2="325" y2="82" stroke="#767B86" stroke-width="1.6"/>
+              <polygon points="320,78 330,78 325,85" fill="#767B86"/>
+
+              <!-- Level 1 -->
+              <rect x="20" y="86" width="610" height="54" rx="5" fill="#FFFFFF" stroke="#2D4A6E" stroke-width="1.5"/>
+              <rect x="30" y="96" width="76" height="34" rx="4" fill="#2D4A6E"/>
+              <text x="68" y="118" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#FFFFFF">LEVEL 1</text>
+              <text x="122" y="110" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#14161A">Room.rwLock &amp; Room.stateMonitor</text>
+              <text x="122" y="128" font-size="11.5" fill="#4A4F5A">ReadersWritersLock (shared for actions/snapshots, exclusive for lifecycle)</text>
+
+              <line x1="325" y1="140" x2="325" y2="158" stroke="#767B86" stroke-width="1.6"/>
+              <polygon points="320,154 330,154 325,161" fill="#767B86"/>
+
+              <!-- Level 2 -->
+              <rect x="20" y="162" width="610" height="58" rx="5" fill="#FBECE9" stroke="#D94E3B" stroke-width="1.5"/>
+              <rect x="30" y="174" width="76" height="34" rx="4" fill="#D94E3B"/>
+              <text x="68" y="196" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#FFFFFF">LEVEL 2</text>
+              <text x="122" y="186" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#A83222">Entity Locks: Player (0..3) → Station (10..49)</text>
+              <text x="122" y="206" font-size="11.5" fill="#4A4F5A">Per-entity BakeryLock(6) · Multi-lock strictly ascending resourceId</text>
+
+              <line x1="325" y1="220" x2="325" y2="238" stroke="#767B86" stroke-width="1.6"/>
+              <polygon points="320,234 330,234 325,241" fill="#767B86"/>
+
+              <!-- Level 3 -->
+              <rect x="20" y="242" width="610" height="54" rx="5" fill="#FFFFFF" stroke="#237A74" stroke-width="1.5"/>
+              <rect x="30" y="252" width="76" height="34" rx="4" fill="#237A74"/>
+              <text x="68" y="274" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#FFFFFF">LEVEL 3</text>
+              <text x="122" y="266" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#14161A">OrderBoard.orderMutex</text>
+              <text x="122" y="284" font-size="11.5" fill="#4A4F5A">BinarySemaphore — atomic serve/expire; NEVER blocks on emptySlots.P()</text>
+
+              <line x1="325" y1="296" x2="325" y2="314" stroke="#767B86" stroke-width="1.6"/>
+              <polygon points="320,310 330,310 325,317" fill="#767B86"/>
+
+              <!-- Level 4 -->
+              <rect x="20" y="318" width="610" height="54" rx="5" fill="#FFFFFF" stroke="#B57A00" stroke-width="1.5"/>
+              <rect x="30" y="328" width="76" height="34" rx="4" fill="#B57A00"/>
+              <text x="68" y="350" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#FFFFFF">LEVEL 4</text>
+              <text x="122" y="342" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#14161A">PlatePool.plateMutex</text>
+              <text x="122" y="360" font-size="11.5" fill="#4A4F5A">BinarySemaphore — non-blocking plate count update; signals dirtyPlates.V() after</text>
+
+              <line x1="325" y1="372" x2="325" y2="390" stroke="#767B86" stroke-width="1.6"/>
+              <polygon points="320,386 330,386 325,393" fill="#767B86"/>
+
+              <!-- Level 5 -->
+              <rect x="20" y="394" width="610" height="60" rx="5" fill="#EFECE4" stroke="#14161A" stroke-width="1.5"/>
+              <rect x="30" y="407" width="76" height="34" rx="4" fill="#14161A"/>
+              <text x="68" y="429" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#FFFFFF">LEVEL 5</text>
+              <text x="122" y="420" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" fill="#14161A">BroadcastQueue.mutex &amp; ClientConnection.writeMutex</text>
+              <text x="122" y="439" font-size="11.5" fill="#4A4F5A">Leaf locks — acquire ZERO other locks inside; called after gameplay locks release</text>
+            </svg>
+          </div>
+
+          <!-- Proof Rules Column -->
+          <div class="col" style="gap:14px;">
+            <div class="card-accent">
+              <h3>Rule 1: Strict Ascending Level</h3>
+              <p style="font-size:13.5px;">
+                A thread holding a lock at Level <code>k</code> may <strong>only</strong> acquire a lock at Level <code>&gt; k</code> (or strictly higher <code>resourceId</code> within Level 2). No downward edges exist anywhere in the codebase.
+              </p>
+            </div>
+
+            <div class="card-accent teal">
+              <h3>Rule 2: Zero-Lock Blocking Discipline</h3>
+              <p style="font-size:13.2px;margin-bottom:8px;">
+                Blocking condition semaphores are <strong>only</strong> called by dedicated background threads while holding <strong>zero</strong> other locks:
+              </p>
+              <ul class="clean teal">
+                <li><code>emptySlots.P()</code> → <code>OrderGeneratorThread</code> only</li>
+                <li><code>dirtyPlates.P()</code> → <code>DishwasherThread</code> only</li>
+                <li><code>filledSlots.P()</code> → <code>RoomBroadcasterThread</code> only</li>
+              </ul>
+            </div>
+
+            <div class="card-accent ochre">
+              <h3>Rule 3: Non-Blocking Player Threads</h3>
+              <p style="font-size:13.5px;">
+                <code>ClientHandlerThread</code>s never block on condition semaphores; they execute bounded critical sections and return immediately — keeping gameplay responsive under contention.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>13 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 14: VERIFICATION & STRESS TESTS ==================== -->
+    <section class="slide" data-title="Verification & Concurrency Stress Tests" data-notes="Show concrete quantitative proof from running cd server && make test. First the Makefile enforces 0 occurrences of java.util.concurrent across the entire source tree, then ConcurrencyTestSuite hammers every primitive, gameplay race, and raw TCP load scenario.">
+      <div class="slide-top">
+        <span class="kicker teal"><span class="dot"></span>06 / VERIFICATION &amp; STRESS TESTING</span>
+        <span class="slide-ref">cd server &amp;&amp; make test · 0 j.u.c IMPORTS ENFORCED</span>
+      </div>
+      <div class="slide-body" style="gap:14px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;">
+          <h2 style="margin-bottom:0;">Verified by 6 Automated Concurrency &amp; Load Suites</h2>
+          <span class="tag teal" style="font-size:12px;">grep -rn "java.util.concurrent" src/ → 0 MATCHES</span>
+        </div>
+
+        <div class="grid-3" style="flex:1;">
+          <div class="test-card">
+            <div class="test-top">
+              <span class="test-name">1. MutexStressTest</span>
+              <span class="pass-badge">PASSED</span>
+            </div>
+            <div class="test-metric">520,000 CS entries</div>
+            <div class="test-desc">
+              <code>PetersonLock</code> (100k), <code>BakeryLock</code> (120k), <code>HWMutex</code> (120k), <code>BinarySem</code> (120k), <code>LamportClock</code> (60k), + opposing <code>ResourceLocker</code> transfers (400 conserved, 0 deadlocks).
+            </div>
+          </div>
+
+          <div class="test-card">
+            <div class="test-top">
+              <span class="test-name">2. BoundedBufferTest</span>
+              <span class="pass-badge">PASSED</span>
+            </div>
+            <div class="test-metric">40,000 items · 4P/4C</div>
+            <div class="test-desc">
+              Cap=8 circular buffer verified exact checksum with zero loss/duplicates/deadlocks. <code>CountingSem(4)</code> across 8 threads capped at <code>max=4</code>. <code>ListQueue</code> monitor delivered 32,000 items.
+            </div>
+          </div>
+
+          <div class="test-card">
+            <div class="test-top">
+              <span class="test-name">3. ReadersWritersTest</span>
+              <span class="pass-badge">PASSED</span>
+            </div>
+            <div class="test-metric">24,000 writes · 6R/3W</div>
+            <div class="test-desc">
+              Verified true reader parallelism (<code>maxConcurrentReaders ≥ 4</code>), zero torn multi-field reads, and zero writer starvation under continuous read pressure.
+            </div>
+          </div>
+
+          <div class="test-card">
+            <div class="test-top">
+              <span class="test-name">4. DuplicateOrderRace</span>
+              <span class="pass-badge">PASSED</span>
+            </div>
+            <div class="test-metric">500 race rounds</div>
+            <div class="test-desc">
+              4 chefs racing for 1 <code>BURGER</code> across 300 rounds → strictly <strong>1 winner</strong>/round. Simultaneous serve vs. expiry across 200 rounds → <strong>0 double outcomes</strong>. Confirmed producer block at 5/5.
+            </div>
+          </div>
+
+          <div class="test-card">
+            <div class="test-top">
+              <span class="test-name">5. StationContention</span>
+              <span class="pass-badge">PASSED</span>
+            </div>
+            <div class="test-metric">400 stove races</div>
+            <div class="test-desc">
+              4 chefs simultaneously grabbing 1 <code>COOKED_PATTY</code> on Stove #0 across 400 rounds → strictly 1 pickup, <strong>0 duplications</strong>. <code>PlatePool</code> + <code>Dishwasher</code> conserved <code>4/4</code> plates across 160 serves.
+            </div>
+          </div>
+
+          <div class="test-card">
+            <div class="test-top">
+              <span class="test-name">6. TcpLoadTest</span>
+              <span class="pass-badge">PASSED</span>
+            </div>
+            <div class="test-metric">8 live TCP sockets</div>
+            <div class="test-desc">
+              8 concurrent raw <code>java.net.Socket</code> clients across 2 rooms performing lobby ready, start, concurrent <code>MOVE</code>/<code>INTERACT</code>/<code>CHOP</code>, monotonic <code>seq</code> snapshots, and <strong>0 leaked connections</strong>.
+            </div>
+          </div>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-head">
+            <span>Reproducible Verification Command</span>
+            <span class="lang json">Makefile Gate</span>
+          </div>
+<pre class="tiny">$ cd server &amp;&amp; make test
+Checking CMPE 436 hard constraints (zero java.util.concurrent.*)... OK: Zero java.util.concurrent imports found.
+[PASS] MutexStressTest  [PASS] BoundedBufferStressTest  [PASS] ReadersWritersStressTest
+[PASS] DuplicateOrderRaceTest  [PASS] StationContentionTest  [PASS] TcpLoadTest  — ALL 6 SUITES PASSED</pre>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>CMPE 436 — UNDERCOOKED</span>
+        <span>14 / 15</span>
+      </div>
+    </section>
+
+    <!-- ==================== SLIDE 15: LIVE DEMO & Q&A ==================== -->
+    <section class="slide dark" data-title="Live Classroom Demo & Q&A" data-notes="Transition straight into the live classroom demo! Start the server with --log-concurrency so the projector shows live [BAKERY], [ORDER_BOARD], [PLATE_POOL], and [ROOM_MONITOR] events in real time while volunteers play from their phones.">
+      <div class="slide-top">
+        <span class="kicker"><span class="dot"></span>07 / LIVE CLASSROOM DEMO</span>
+        <span class="slide-ref">MULTIPLAYER MOBILE DEMO · REAL-TIME CONCURRENCY TRACE</span>
+      </div>
+      <div class="slide-body" style="justify-content:center;gap:28px;">
+        <div>
+          <div class="cover-eyebrow">LET'S PLAY &amp; OBSERVE THE THREADS</div>
+          <h1 style="font-size:52px;">Live Demo &amp; Questions</h1>
+          <p class="cover-sub" style="margin-top:14px;max-width:860px;font-size:18px;">
+            Watch <code>BakeryLock</code>, <code>OrderBoard</code>, <code>PlatePool</code>, and <code>RoomStateMonitor</code> fire live in the server console while chefs compete in the same kitchen over raw TCP.
+          </p>
+        </div>
+
+        <div class="grid-3">
+          <div class="cover-card">
+            <div style="font-family:var(--font-mono);font-size:11px;color:#F07B68;margin-bottom:8px;">STEP 01 · SERVER TRACE</div>
+            <h3 style="color:#F4F2EC;">Run with Live Logging</h3>
+            <p style="font-size:13px;margin-top:6px;">
+              Launch the plain-Java server JAR with <code>--log-concurrency</code> to stream lock acquisitions and semaphore wakes.
+            </p>
+          </div>
+
+          <div class="cover-card">
+            <div style="font-family:var(--font-mono);font-size:11px;color:#7DC4B8;margin-bottom:8px;">STEP 02 · JOIN OVER TCP</div>
+            <h3 style="color:#F4F2EC;">Connect 2–4 Phones</h3>
+            <p style="font-size:13px;margin-top:6px;">
+              Enter GCP static IP + port <code>6789</code> on Android APK / iOS, join the same 4-letter room code, toggle Ready, and start a 90s shift.
+            </p>
+          </div>
+
+          <div class="cover-card">
+            <div style="font-family:var(--font-mono);font-size:11px;color:#F2C97D;margin-bottom:8px;">STEP 03 · TRIGGER RACES</div>
+            <h3 style="color:#F4F2EC;">Stress the Kitchen Live</h3>
+            <p style="font-size:13px;margin-top:6px;">
+              Grab the same cooked patty together, race to serve the last burger, and drain all 4 clean plates to watch <code>DishwasherThread</code> recover!
+            </p>
+          </div>
+        </div>
+
+        <div class="code-panel" style="border-color:#2F3542;">
+          <div class="code-head">
+            <span>Classroom Demo Server Command</span>
+            <span class="lang java">Plain Java 21 · GCP / Local</span>
+          </div>
+<pre class="compact">$ java -jar server/dist/undercooked-server.jar <span class="num">6789</span> --log-concurrency
+<span class="cm">[ROOM_MONITOR] State transition WAITING -&gt; PLAYING (notifyAll)</span>
+<span class="cm">[BAKERY]       Slot 0 requesting ordered locks Player#0 -&gt; Station#14 (STOVE)</span>
+<span class="cm">[ORDER_BOARD]  Atomic complete Order#3 (BURGER) +80 pts</span>
+<span class="cm">[PLATE_POOL]   Dirty plate submitted -&gt; dirtyPlates.V() (washing=1)</span></pre>
+        </div>
+      </div>
+      <div class="slide-foot">
+        <span>THANK YOU · CMPE 436 — UNDERCOOKED</span>
+        <span>15 / 15</span>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Progress Bar -->
+<div id="progress"></div>
+
+<!-- Presenter Notes Drawer -->
+<div id="notes-drawer">
+  <div class="notes-lbl">Presenter Notes (Press N to hide)</div>
+  <div id="notes-text"></div>
+</div>
+
+<!-- Minimal Corner Controls -->
+<div id="hud-controls">
+  <button id="btn-prev" title="Previous (←)">←</button>
+  <span id="hud-counter">1 / 15</span>
+  <button id="btn-next" title="Next (→)">→</button>
+  <button id="btn-notes" title="Speaker Notes (N)">Notes</button>
+  <button id="btn-grid" title="Overview (G)">Grid</button>
+  <button id="btn-fs" title="Fullscreen (F)">Full</button>
+</div>
+
+<!-- Slide Grid Overview -->
+<div id="overview">
+  <div class="ov-head">
+    <h2 style="color:#F4F2EC;margin:0;font-size:24px;">Slide Overview (Press G or Esc to close)</h2>
+    <button id="ov-close" style="background:#262B36;color:#F4F2EC;border:1px solid #3A4252;padding:6px 14px;border-radius:5px;cursor:pointer;font-family:var(--font-mono);">Close</button>
+  </div>
+  <div class="ov-grid" id="ov-grid"></div>
+</div>
+
+<script>
+  (function () {
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const deck = document.getElementById('deck');
+    const counter = document.getElementById('hud-counter');
+    const progress = document.getElementById('progress');
+    const notesDrawer = document.getElementById('notes-drawer');
+    const notesText = document.getElementById('notes-text');
+    const overview = document.getElementById('overview');
+    const ovGrid = document.getElementById('ov-grid');
+
+    let current = 0;
+
+    function scaleDeck() {
+      if (window.matchMedia('print').matches) return;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const scale = Math.min(vw / 1280, vh / 720);
+      deck.style.transform = `scale(${scale})`;
+    }
+
+    function show(idx, pushHash = true) {
+      current = Math.max(0, Math.min(slides.length - 1, idx));
+      slides.forEach((s, i) => s.classList.toggle('active', i === current));
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+      notesText.textContent = slides[current].dataset.notes || 'No notes for this slide.';
+      if (pushHash) {
+        history.replaceState(null, '', `#${current + 1}`);
+      }
+      renderOverviewSelection();
+    }
+
+    function buildOverview() {
+      ovGrid.innerHTML = '';
+      slides.forEach((s, i) => {
+        const item = document.createElement('div');
+        item.className = 'ov-item';
+        item.innerHTML = `<div class="ov-num">SLIDE ${String(i + 1).padStart(2, '0')}</div><div class="ov-title">${s.dataset.title || ''}</div>`;
+        item.addEventListener('click', () => {
+          show(i);
+          overview.classList.remove('open');
+        });
+        ovGrid.appendChild(item);
+      });
+    }
+
+    function renderOverviewSelection() {
+      Array.from(ovGrid.children).forEach((el, i) => {
+        el.classList.toggle('current', i === current);
+      });
+    }
+
+    function parseHash() {
+      const m = window.location.hash.match(/^#(\d+)$/);
+      if (m) {
+        const n = parseInt(m[1], 10) - 1;
+        if (n >= 0 && n < slides.length) return n;
+      }
+      return 0;
+    }
+
+    document.getElementById('btn-prev').addEventListener('click', () => show(current - 1));
+    document.getElementById('btn-next').addEventListener('click', () => show(current + 1));
+    document.getElementById('btn-notes').addEventListener('click', () => notesDrawer.classList.toggle('open'));
+    document.getElementById('btn-grid').addEventListener('click', () => overview.classList.toggle('open'));
+    document.getElementById('ov-close').addEventListener('click', () => overview.classList.remove('open'));
+    document.getElementById('btn-fs').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.();
+      } else {
+        document.exitFullscreen?.();
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        overview.classList.remove('open');
+        notesDrawer.classList.remove('open');
+        return;
+      }
+      if (e.key === 'g' || e.key === 'G') {
+        overview.classList.toggle('open');
+        return;
+      }
+      if (overview.classList.contains('open')) return;
+
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        show(current + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        show(current - 1);
+      } else if (e.key === 'Home') {
+        show(0);
+      } else if (e.key === 'End') {
+        show(slides.length - 1);
+      } else if (e.key === 'n' || e.key === 'N') {
+        notesDrawer.classList.toggle('open');
+      } else if (e.key === 'f' || e.key === 'F') {
+        document.getElementById('btn-fs').click();
+      }
+    });
+
+    window.addEventListener('hashchange', () => show(parseHash(), false));
+    window.addEventListener('resize', scaleDeck);
+
+    buildOverview();
+    scaleDeck();
+    show(parseHash(), false);
+  })();
+</script>
+</body>
+</html>

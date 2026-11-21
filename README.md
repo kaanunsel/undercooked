@@ -2,6 +2,12 @@
 
 A 2D multiplayer cooperative cooking game (inspired by *Overcooked*) built for **Boğaziçi University CMPE 436: Concurrent and Distributed Programming** (Fall 2026–2027).
 
+<p align="center">
+  <img src="docs/images/gameplay.jpg" alt="Undercooked 2D multiplayer kitchen gameplay screenshot" width="100%" />
+</p>
+
+> *Real-time 1–4 player cooperative kitchen (12×8 top-down grid) rendered with React Native Skia — featuring a bounded timed order board, contested stoves & chopping boards, a finite 4-plate pool with an asynchronous dishwasher, and a plain-Java raw TCP backend with hand-rolled concurrency primitives.*
+
 - **Backend (`server/`)**: Plain Java 21 raw TCP server (`java.net.ServerSocket`, `\n`-delimited JSON, explicit `Thread` per connection, zero frameworks, zero `java.util.concurrent.*` — all locks, semaphores, bounded buffers, and monitors implemented from scratch following course lectures).
 - **Mobile Client (`mobile/`)**: Bare React Native (`@react-native-community/cli`, Android APK & iOS native builds) + TypeScript (`react-native-tcp-socket`, `@shopify/react-native-skia`, Reanimated, Gesture Handler, Zustand, React Navigation, `react-native-sound`).
 - **Infrastructure (`infra/terraform/`)**: Single GCP Compute Engine VM managed via Terraform (`project-72f15835-9e20-4691-877`).
@@ -47,3 +53,4 @@ npx react-native run-ios
 - [CONCURRENCY.md](CONCURRENCY.md) — Detailed register of all concurrency scenarios, CMPE 436 primitive mappings, deadlock-freedom proof, and verified stress tests.
 - [EXECUTION_PLAN.md](EXECUTION_PLAN.md) — Monorepo structure and phased implementation roadmap.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — Overall architecture and Mermaid sequence diagrams.
+- [docs/presentation/index.html](docs/presentation/index.html) ([PDF](docs/presentation/undercooked-cmpe436-slides.pdf)) — CMPE 436 classroom presentation deck (game overview, raw TCP server/client code, hand-rolled concurrency deep dive, deadlock-freedom proof, and stress test results).
